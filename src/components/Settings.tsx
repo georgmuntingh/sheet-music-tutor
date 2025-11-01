@@ -82,13 +82,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                   min="0.1"
                   step="0.1"
                   value={msToSeconds(settings.box0Interval)}
-                  onChange={(e) => handleIntervalChange('box0Interval', e.target.value)}
-                  onBlur={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
-                      handleIntervalChange('box0Interval', String(secondsToMs(value)));
-                    }
-                  }}
+                  onChange={(e) => handleIntervalChange('box0Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
