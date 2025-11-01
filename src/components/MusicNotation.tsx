@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Renderer, Stave, StaveNote, Formatter, Accidental } from 'vexflow';
+import { Renderer, Stave, StaveNote, Formatter, Accidental, Voice } from 'vexflow';
 import { Note } from '../types';
 import { getClef } from '../utils/noteUtils';
 
@@ -53,9 +53,13 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
       staveNote.addModifier(new Accidental(accidental), 0);
     }
 
+    // Create a voice and add the note
+    const voice = new Voice({ num_beats: 4, beat_value: 4 });
+    voice.addTickables([staveNote]);
+
     // Format and draw
     const formatter = new Formatter();
-    formatter.joinVoices([{ notes: [staveNote] } as any]).format([{ notes: [staveNote] } as any], width - 100);
+    formatter.joinVoices([voice]).format([voice], width - 100);
 
     staveNote.setContext(context).setStave(stave);
     staveNote.draw();
