@@ -97,6 +97,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({
                 onCorrect();
               }, settings.feedbackLength);
             } else {
+              // Clear the timeout timer on incorrect answer too
+              if (timeoutTimer) {
+                clearTimeout(timeoutTimer);
+                setTimeoutTimer(null);
+              }
               setFeedback('incorrect');
               setTimeout(() => {
                 onIncorrect();
@@ -124,6 +129,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               onCorrect();
             }, settings.feedbackLength);
           } else {
+            // Clear the timeout timer on incorrect answer too
+            if (timeoutTimer) {
+              clearTimeout(timeoutTimer);
+              setTimeoutTimer(null);
+            }
             setFeedback('incorrect');
             setTimeout(() => {
               onIncorrect();
