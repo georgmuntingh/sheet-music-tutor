@@ -1,0 +1,175 @@
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  padding: 2rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-align: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+.subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.app-main {
+  flex: 1;
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.controls {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.primary-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.secondary-button {
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.secondary-button:hover {
+  background: #e0e0e0;
+  border-color: #ccc;
+}
+
+.danger-button {
+  background: #dc3545;
+  color: white;
+  border: none;
+  font-size: 1.1rem;
+  padding: 0.8rem 1.5rem;
+}
+
+.danger-button:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  text-align: center;
+  border: 1px solid #f5c6cb;
+}
+
+.no-cards {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.no-cards h2 {
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.no-cards p {
+  color: #666;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+.app-footer {
+  background: #f9f9f9;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: #666;
+  border-top: 1px solid #e0e0e0;
+}
+
+.app-footer p {
+  margin: 0.5rem 0;
+}
+
+.tip {
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .app-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .controls button {
+    width: 100%;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .secondary-button {
+    background: #2a2a2a;
+    color: rgba(255, 255, 255, 0.87);
+    border-color: #555;
+  }
+
+  .secondary-button:hover {
+    background: #333;
+    border-color: #666;
+  }
+
+  .no-cards {
+    background: #1a1a1a;
+  }
+
+  .no-cards h2 {
+    color: #4ade80;
+  }
+
+  .no-cards p {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  .app-footer {
+    background: #1a1a1a;
+    border-top-color: #333;
+  }
+}

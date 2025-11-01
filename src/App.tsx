@@ -1,0 +1,254 @@
+import { useState, useEffect, useCallback } from 'react';
+import { FlashCard as FlashCardType } from './types';
+import { FlashCard } from './components/FlashCard';
+import { ProgressDisplay } from './components/ProgressDisplay';
+import { PianoPitchDetector } from './utils/pitchDetection';
+import {
+  initializeFlashCards,
+  getNextCard,
+  promoteCard,
+  demoteCard,
+  introduceCard,
+} from './utils/leitnerSystem';
+import { saveProgress, loadProgress } from './utils/storage';
+import './App.css';
+
+function App() {
+  const [cards, setCards] = useState<FlashCardType[]>([]);
+  const [currentCard, setCurrentCard] = useState<FlashCardType | null>(null);
+  const [detector] = useState(() => new PianoPitchDetector());
+  const [isListening, setIsListening] = useState(false);
+  const [detectedNote, setDetectedNote] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showProgress, setShowProgress] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  // Load or initialize cards
+  useEffect(() => {
+    const savedCards = loadProgress();
+    const initialCards = savedCards || initializeFlashCards();
+    setCards(initialCards);
+
+    const nextCard = getNextCard(initialCards);
+    if (nextCard) {
+      // If it's a new card, introduce it
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const updatedCards = initialCards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(updatedCards);
+        setCurrentCard(introduced);
+        saveProgress(updatedCards);
+      } else {
+        setCurrentCard(nextCard);
+      }
+    }
+
+    // Cleanup detector on unmount
+    return () => {
+      detector.stop();
+    };
+  }, [detector]);
+
+  // Start listening for piano input
+  const startListening = async () => {
+    setIsInitializing(true);
+    setError(null);
+
+    try {
+      await detector.initialize();
+      setIsListening(true);
+      setIsInitializing(false);
+
+      // Start pitch detection loop
+      detectPitchLoop();
+    } catch (err) {
+      setError('Failed to access microphone. Please allow microphone access and try again.');
+      setIsInitializing(false);
+      setIsListening(false);
+    }
+  };
+
+  // Stop listening
+  const stopListening = () => {
+    detector.stop();
+    setIsListening(false);
+    setDetectedNote(null);
+  };
+
+  // Pitch detection loop
+  const detectPitchLoop = useCallback(async () => {
+    if (!detector.getIsRunning()) return;
+
+    const note = await detector.detectPitchStable(300, 2);
+    if (note) {
+      setDetectedNote(`${note.name}${note.octave}`);
+    }
+
+    // Continue detection if still listening
+    if (detector.getIsRunning()) {
+      setTimeout(detectPitchLoop, 100);
+    }
+  }, [detector]);
+
+  // Handle correct answer
+  const handleCorrect = useCallback(() => {
+    if (!currentCard) return;
+
+    const promoted = promoteCard(currentCard);
+    const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
+    setCards(updatedCards);
+    saveProgress(updatedCards);
+
+    // Get next card
+    setTimeout(() => {
+      setDetectedNote(null);
+      const nextCard = getNextCard(updatedCards);
+
+      if (nextCard) {
+        if (nextCard.boxNumber === -1) {
+          const introduced = introduceCard(nextCard);
+          const cardsWithIntroduced = updatedCards.map(c =>
+            c.id === introduced.id ? introduced : c
+          );
+          setCards(cardsWithIntroduced);
+          setCurrentCard(introduced);
+          saveProgress(cardsWithIntroduced);
+        } else {
+          setCurrentCard(nextCard);
+        }
+      } else {
+        setCurrentCard(null);
+      }
+    }, 1000);
+  }, [currentCard, cards]);
+
+  // Handle incorrect answer
+  const handleIncorrect = useCallback(() => {
+    if (!currentCard) return;
+
+    const demoted = demoteCard(currentCard);
+    const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
+    setCards(updatedCards);
+    saveProgress(updatedCards);
+
+    // Get next card
+    setTimeout(() => {
+      setDetectedNote(null);
+      const nextCard = getNextCard(updatedCards);
+
+      if (nextCard) {
+        if (nextCard.boxNumber === -1) {
+          const introduced = introduceCard(nextCard);
+          const cardsWithIntroduced = updatedCards.map(c =>
+            c.id === introduced.id ? introduced : c
+          );
+          setCards(cardsWithIntroduced);
+          setCurrentCard(introduced);
+          saveProgress(cardsWithIntroduced);
+        } else {
+          setCurrentCard(nextCard);
+        }
+      } else {
+        setCurrentCard(null);
+      }
+    }, 1500);
+  }, [currentCard, cards]);
+
+  // Reset progress
+  const resetProgress = () => {
+    if (confirm('Are you sure you want to reset all progress?')) {
+      const newCards = initializeFlashCards();
+      setCards(newCards);
+      saveProgress(newCards);
+      const nextCard = getNextCard(newCards);
+      if (nextCard && nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const updatedCards = newCards.map(c => c.id === introduced.id ? introduced : c);
+        setCards(updatedCards);
+        setCurrentCard(introduced);
+        saveProgress(updatedCards);
+      } else {
+        setCurrentCard(nextCard);
+      }
+    }
+  };
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <h1>🎹 Piano Sheet Music Tutor</h1>
+        <p className="subtitle">Learn to read piano sheet music with spaced repetition</p>
+      </header>
+
+      <main className="app-main">
+        {error && (
+          <div className="error-message">
+            {error}
+          </div>
+        )}
+
+        <div className="controls">
+          {!isListening && !isInitializing && (
+            <button onClick={startListening} className="primary-button">
+              🎤 Start Listening
+            </button>
+          )}
+
+          {isInitializing && (
+            <button disabled className="primary-button">
+              Initializing microphone...
+            </button>
+          )}
+
+          {isListening && (
+            <button onClick={stopListening} className="danger-button">
+              ⏹ Stop Listening
+            </button>
+          )}
+
+          <button
+            onClick={() => setShowProgress(!showProgress)}
+            className="secondary-button"
+          >
+            {showProgress ? '📚 Hide' : '📊 Show'} Progress
+          </button>
+
+          <button onClick={resetProgress} className="secondary-button">
+            🔄 Reset Progress
+          </button>
+        </div>
+
+        {showProgress && <ProgressDisplay cards={cards} />}
+
+        {currentCard ? (
+          <FlashCard
+            card={currentCard}
+            onCorrect={handleCorrect}
+            onIncorrect={handleIncorrect}
+            isListening={isListening}
+            detectedNote={detectedNote}
+          />
+        ) : (
+          <div className="no-cards">
+            <h2>Congratulations!</h2>
+            <p>You've reviewed all available cards.</p>
+            <p>Come back later for more reviews.</p>
+          </div>
+        )}
+      </main>
+
+      <footer className="app-footer">
+        <p>
+          Play notes on your piano. The app uses your microphone to detect which note you play.
+        </p>
+        <p className="tip">
+          <strong>Tip:</strong> Make sure you're in a quiet environment for best results.
+        </p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;

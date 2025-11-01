@@ -1,0 +1,153 @@
+.flash-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  transition: all 0.3s ease;
+}
+
+.flash-card.correct {
+  background: #d4edda;
+  border: 2px solid #28a745;
+}
+
+.flash-card.incorrect {
+  background: #f8d7da;
+  border: 2px solid #dc3545;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.box-info {
+  font-weight: bold;
+  color: #646cff;
+}
+
+.stats {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.notation-container {
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 8px;
+}
+
+.card-content {
+  min-height: 80px;
+  margin: 1.5rem 0;
+}
+
+.instruction {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #666;
+  padding: 1rem;
+}
+
+.instruction.listening {
+  color: #646cff;
+  font-weight: 500;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.feedback {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: bold;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+
+.correct-feedback {
+  color: #28a745;
+  background: #d4edda;
+}
+
+.incorrect-feedback {
+  color: #dc3545;
+  background: #f8d7da;
+}
+
+.detected {
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  font-weight: normal;
+}
+
+.detected-note {
+  text-align: center;
+  color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.reveal-button {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.reveal-button:hover {
+  background: #e0e0e0;
+}
+
+.revealed-answer {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #646cff;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #f0f0ff;
+  border-radius: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .flash-card {
+    background: #1a1a1a;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .card-header {
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .notation-container {
+    background: #2a2a2a;
+  }
+
+  .reveal-button {
+    background: #2a2a2a;
+    border-color: #555;
+    color: rgba(255, 255, 255, 0.87);
+  }
+
+  .reveal-button:hover {
+    background: #333;
+  }
+}
