@@ -1,4 +1,4 @@
-import { FlashCard, LeitnerBox } from '../types';
+import { FlashCard, LeitnerBox, Note } from '../types';
 import { generateNoteSet } from './noteUtils';
 
 // Leitner system configuration: 5 boxes with increasing intervals
@@ -10,11 +10,11 @@ export const LEITNER_BOXES: LeitnerBox[] = [
   { boxNumber: 4, intervalDays: 14 }, // Review after 14 days
 ];
 
-// Initialize flash cards for all notes
-export const initializeFlashCards = (): FlashCard[] => {
-  const notes = generateNoteSet();
+// Initialize flash cards for specific notes (or all notes if not specified)
+export const initializeFlashCards = (notes?: Note[]): FlashCard[] => {
+  const notesToUse = notes || generateNoteSet();
 
-  return notes.map((note, index) => ({
+  return notesToUse.map((note, index) => ({
     id: `card-${note.name}${note.octave}-${index}`,
     note,
     boxNumber: -1, // -1 means not yet introduced

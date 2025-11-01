@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlashCard as FlashCardType } from './types';
+import { FlashCard as FlashCardType, Lesson } from './types';
 import { FlashCard } from './components/FlashCard';
 import { ProgressDisplay } from './components/ProgressDisplay';
 import { PianoPitchDetector } from './utils/pitchDetection';
@@ -11,11 +11,13 @@ import {
   introduceCard,
 } from './utils/leitnerSystem';
 import { saveProgress, loadProgress } from './utils/storage';
+import { LESSONS } from './utils/lessons';
 import './App.css';
 
 function App() {
   const [cards, setCards] = useState<FlashCardType[]>([]);
   const [currentCard, setCurrentCard] = useState<FlashCardType | null>(null);
+  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [detector] = useState(() => new PianoPitchDetector());
   const [isListening, setIsListening] = useState(false);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
@@ -23,18 +25,19 @@ function App() {
   const [showProgress, setShowProgress] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
 
-  // Load or initialize cards
-  useEffect(() => {
-    const savedCards = loadProgress();
-    const initialCards = savedCards || initializeFlashCards();
-    setCards(initialCards);
+  // Load lesson function
+  const loadLesson = useCallback((lesson: Lesson) => {
+    const newCards = initializeFlashCards(lesson.notes);
+    setCards(newCards);
+    setCurrentLesson(lesson);
+    saveProgress(newCards);
 
-    const nextCard = getNextCard(initialCards);
+    const nextCard = getNextCard(newCards);
     if (nextCard) {
       // If it's a new card, introduce it
       if (nextCard.boxNumber === -1) {
         const introduced = introduceCard(nextCard);
-        const updatedCards = initialCards.map(c =>
+        const updatedCards = newCards.map(c =>
           c.id === introduced.id ? introduced : c
         );
         setCards(updatedCards);
@@ -44,12 +47,37 @@ function App() {
         setCurrentCard(nextCard);
       }
     }
+  }, []);
+
+  // Initialize with first lesson on mount
+  useEffect(() => {
+    const savedCards = loadProgress();
+    if (savedCards && savedCards.length > 0) {
+      setCards(savedCards);
+      const nextCard = getNextCard(savedCards);
+      if (nextCard) {
+        if (nextCard.boxNumber === -1) {
+          const introduced = introduceCard(nextCard);
+          const updatedCards = savedCards.map(c =>
+            c.id === introduced.id ? introduced : c
+          );
+          setCards(updatedCards);
+          setCurrentCard(introduced);
+          saveProgress(updatedCards);
+        } else {
+          setCurrentCard(nextCard);
+        }
+      }
+    } else {
+      // Start with first lesson if no saved progress
+      loadLesson(LESSONS[0]);
+    }
 
     // Cleanup detector on unmount
     return () => {
       detector.stop();
     };
-  }, [detector]);
+  }, [detector, loadLesson]);
 
   // Start listening for piano input
   const startListening = async () => {
@@ -188,6 +216,22 @@ function App() {
             {error}
           </div>
         )}
+
+        <div className="lesson-selector">
+          <h2>Select a Lesson</h2>
+          <div className="lesson-buttons">
+            {LESSONS.map((lesson) => (
+              <button
+                key={lesson.id}
+                onClick={() => loadLesson(lesson)}
+                className={currentLesson?.id === lesson.id ? 'lesson-button active' : 'lesson-button'}
+              >
+                <strong>{lesson.name}</strong>
+                <span className="lesson-description">{lesson.description}</span>
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="controls">
           {!isListening && !isInitializing && (
