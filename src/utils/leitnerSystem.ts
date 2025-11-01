@@ -56,12 +56,17 @@ export const getNewCard = (cards: FlashCard[]): FlashCard | null => {
 };
 
 // Get the next card to study (due card or new card)
-export const getNextCard = (cards: FlashCard[]): FlashCard | null => {
+export const getNextCard = (cards: FlashCard[], excludeCardId?: string): FlashCard | null => {
   const dueCards = getDueCards(cards);
 
-  if (dueCards.length > 0) {
+  // Filter out the excluded card if specified
+  const availableCards = excludeCardId
+    ? dueCards.filter(card => card.id !== excludeCardId)
+    : dueCards;
+
+  if (availableCards.length > 0) {
     // Return a random due card to add variety
-    return dueCards[Math.floor(Math.random() * dueCards.length)];
+    return availableCards[Math.floor(Math.random() * availableCards.length)];
   }
 
   // If no due cards, introduce a new card

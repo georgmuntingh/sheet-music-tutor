@@ -174,10 +174,10 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessons);
 
-    // Get next card
+    // Get next card (exclude the one we just answered to prevent flickering)
     setTimeout(() => {
       setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+      const nextCard = getNextCard(updatedCards, currentCard.id);
 
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
@@ -206,10 +206,10 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessons);
 
-    // Get next card
+    // Get next card (exclude the one we just answered to prevent flickering)
     setTimeout(() => {
       setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+      const nextCard = getNextCard(updatedCards, currentCard.id);
 
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
