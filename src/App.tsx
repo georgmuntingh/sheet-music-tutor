@@ -48,24 +48,28 @@ function App() {
       return null;
     }
 
-    // Get all other due cards to populate the queue
-    const allDueAndNewCards: FlashCardType[] = [];
+    // If next card is a new card (not yet introduced), don't add others to queue
+    // New cards should be introduced one at a time
+    if (nextCard.boxNumber === -1) {
+      return nextCard;
+    }
+
+    // Get all other due cards to populate the queue (excluding new cards)
+    const allDueCards: FlashCardType[] = [];
     const now = Date.now();
 
     for (const card of allCards) {
       if (card.id === nextCard.id) continue; // Skip the card we're about to show
+      if (card.boxNumber === -1) continue; // Skip new cards - they're introduced one at a time
 
-      if (card.boxNumber === -1) {
-        // New card not yet introduced
-        allDueAndNewCards.push(card);
-      } else if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
-        // Due card
-        allDueAndNewCards.push(card);
+      if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
+        // Due card that's already been introduced
+        allDueCards.push(card);
       }
     }
 
     // Set the queue with remaining due cards
-    setCardQueue(allDueAndNewCards);
+    setCardQueue(allDueCards);
 
     return nextCard;
   }, [cardQueue]);
