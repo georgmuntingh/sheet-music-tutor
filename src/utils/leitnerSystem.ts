@@ -1,5 +1,6 @@
-import { FlashCard, LeitnerBox, Note } from '../types';
+import { FlashCard, LeitnerBox, Note, RehearsalSettings } from '../types';
 import { generateNoteSet } from './noteUtils';
+import { loadSettings } from './settingsStorage';
 
 // Leitner system configuration: 5 boxes with increasing intervals
 export const LEITNER_BOXES: LeitnerBox[] = [
@@ -9,6 +10,20 @@ export const LEITNER_BOXES: LeitnerBox[] = [
   { boxNumber: 3, intervalDays: 7 }, // Review after 7 days
   { boxNumber: 4, intervalDays: 14 }, // Review after 14 days
 ];
+
+// Get interval in milliseconds based on settings
+const getIntervalMs = (boxNumber: number, settings?: RehearsalSettings): number => {
+  const currentSettings = settings || loadSettings();
+
+  switch (boxNumber) {
+    case 0: return currentSettings.box0Interval;
+    case 1: return currentSettings.box1Interval;
+    case 2: return currentSettings.box2Interval;
+    case 3: return currentSettings.box3Interval;
+    case 4: return currentSettings.box4Interval;
+    default: return currentSettings.box0Interval;
+  }
+};
 
 // Initialize flash cards for specific notes (or all notes if not specified)
 export const initializeFlashCards = (notes?: Note[]): FlashCard[] => {
@@ -54,31 +69,31 @@ export const getNextCard = (cards: FlashCard[]): FlashCard | null => {
 };
 
 // Move card to next box (correct answer)
-export const promoteCard = (card: FlashCard): FlashCard => {
+export const promoteCard = (card: FlashCard, settings?: RehearsalSettings): FlashCard => {
   const now = Date.now();
   const newBoxNumber = Math.min(card.boxNumber + 1, LEITNER_BOXES.length - 1);
-  const intervalDays = LEITNER_BOXES[newBoxNumber].intervalDays;
+  const intervalMs = getIntervalMs(newBoxNumber, settings);
 
   return {
     ...card,
     boxNumber: newBoxNumber,
     lastReviewDate: now,
-    nextReviewDate: now + intervalDays * 24 * 60 * 60 * 1000,
+    nextReviewDate: now + intervalMs,
     reviewCount: card.reviewCount + 1,
     correctCount: card.correctCount + 1,
   };
 };
 
 // Move card to first box (incorrect answer)
-export const demoteCard = (card: FlashCard): FlashCard => {
+export const demoteCard = (card: FlashCard, settings?: RehearsalSettings): FlashCard => {
   const now = Date.now();
-  const firstBoxInterval = LEITNER_BOXES[0].intervalDays;
+  const intervalMs = getIntervalMs(0, settings);
 
   return {
     ...card,
     boxNumber: 0,
     lastReviewDate: now,
-    nextReviewDate: now + firstBoxInterval * 24 * 60 * 60 * 1000,
+    nextReviewDate: now + intervalMs,
     reviewCount: card.reviewCount + 1,
     incorrectCount: card.incorrectCount + 1,
   };

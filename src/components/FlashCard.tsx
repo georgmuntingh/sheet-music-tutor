@@ -20,28 +20,97 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
+  const [detectionTimer, setDetectionTimer] = useState<number | null>(null);
+  const [stableNote, setStableNote] = useState<string | null>(null);
 
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
+  // Clear detection timer when component unmounts or card changes
   useEffect(() => {
-    if (detectedNote && isListening) {
-      if (detectedNote === expectedNote) {
-        setFeedback('correct');
-        setTimeout(() => {
-          onCorrect();
-          setFeedback(null);
-          setShowNote(false);
-        }, 1000);
+    return () => {
+      if (detectionTimer) {
+        clearTimeout(detectionTimer);
+      }
+    };
+  }, [detectionTimer, card.id]);
+
+  // Handle note detection with delay
+  useEffect(() => {
+    if (!isListening || feedback) {
+      return;
+    }
+
+    if (detectedNote) {
+      // If we already have a timer running
+      if (detectionTimer) {
+        // If the note changed, clear the previous timer
+        if (detectedNote !== stableNote) {
+          clearTimeout(detectionTimer);
+          setDetectionTimer(null);
+          setStableNote(detectedNote);
+
+          // Start a new timer for the new note
+          const timer = setTimeout(() => {
+            // After 500ms, make the judgment
+            if (detectedNote === expectedNote) {
+              setFeedback('correct');
+              setTimeout(() => {
+                onCorrect();
+                setFeedback(null);
+                setShowNote(false);
+                setStableNote(null);
+              }, 1000);
+            } else {
+              setFeedback('incorrect');
+              setTimeout(() => {
+                onIncorrect();
+                setFeedback(null);
+                setShowNote(false);
+                setStableNote(null);
+              }, 1500);
+            }
+            setDetectionTimer(null);
+          }, 500); // 0.5 second delay before judgment
+
+          setDetectionTimer(timer);
+        }
+        // If note hasn't changed, timer continues
       } else {
-        setFeedback('incorrect');
-        setTimeout(() => {
-          onIncorrect();
-          setFeedback(null);
-          setShowNote(false);
-        }, 1500);
+        // No timer running yet, start one
+        setStableNote(detectedNote);
+        const timer = setTimeout(() => {
+          // After 500ms, make the judgment
+          if (detectedNote === expectedNote) {
+            setFeedback('correct');
+            setTimeout(() => {
+              onCorrect();
+              setFeedback(null);
+              setShowNote(false);
+              setStableNote(null);
+            }, 1000);
+          } else {
+            setFeedback('incorrect');
+            setTimeout(() => {
+              onIncorrect();
+              setFeedback(null);
+              setShowNote(false);
+              setStableNote(null);
+            }, 1500);
+          }
+          setDetectionTimer(null);
+        }, 500); // 0.5 second delay before judgment
+
+        setDetectionTimer(timer);
+      }
+    } else {
+      // Note detection cleared, clear timer
+      if (detectionTimer) {
+        clearTimeout(detectionTimer);
+        setDetectionTimer(null);
+        setStableNote(null);
       }
     }
-  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect]);
+  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote]);
 
   return (
     <div className={`flash-card ${feedback || ''}`}>
