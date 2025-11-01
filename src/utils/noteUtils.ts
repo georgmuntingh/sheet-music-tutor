@@ -58,11 +58,7 @@ export const toVexFlowNote = (note: Note): string => {
 };
 
 // Get the clef for a note (treble or bass)
-export const getClef = (note: Note): 'treble' | 'bass' => {
-  // Middle C (C4) and above use treble clef
-  if (note.octave > 4 || (note.octave === 4 && note.name !== 'C')) {
-    return 'treble';
-  }
-  // Below middle C use bass clef
-  return 'bass';
+export const getClef = (_note: Note): 'treble' | 'bass' => {
+  // Always use treble clef (G-clef) for all lessons
+  return 'treble';
 };

@@ -23,10 +23,19 @@ export interface LeitnerBox {
   intervalDays: number; // days until next review
 }
 
+// Lesson representation
+export interface Lesson {
+  id: string;
+  name: string;
+  description: string;
+  notes: Note[];
+}
+
 // Learning progress state
 export interface LearningProgress {
   cards: FlashCard[];
   currentCardId: string | null;
   totalReviews: number;
   correctReviews: number;
+  currentLessonId?: string;
 }
