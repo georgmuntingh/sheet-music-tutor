@@ -39,3 +39,12 @@ export interface LearningProgress {
   correctReviews: number;
   currentLessonId?: string;
 }
+
+// Settings for rehearsal intervals (in milliseconds)
+export interface RehearsalSettings {
+  box0Interval: number; // Box 0 (new cards)
+  box1Interval: number; // Box 1
+  box2Interval: number; // Box 2
+  box3Interval: number; // Box 3
+  box4Interval: number; // Box 4
+}

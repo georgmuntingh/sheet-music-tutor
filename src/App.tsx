@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlashCard as FlashCardType, Lesson } from './types';
+import { FlashCard as FlashCardType, Lesson, RehearsalSettings } from './types';
 import { FlashCard } from './components/FlashCard';
 import { ProgressDisplay } from './components/ProgressDisplay';
+import { Settings } from './components/Settings';
 import { PianoPitchDetector } from './utils/pitchDetection';
 import {
   initializeFlashCards,
@@ -11,6 +12,7 @@ import {
   introduceCard,
 } from './utils/leitnerSystem';
 import { saveProgress, loadProgress } from './utils/storage';
+import { loadSettings } from './utils/settingsStorage';
 import { LESSONS } from './utils/lessons';
 import './App.css';
 
@@ -23,7 +25,9 @@ function App() {
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
 
   // Load lesson function
   const loadLesson = useCallback((lesson: Lesson) => {
@@ -124,7 +128,7 @@ function App() {
   const handleCorrect = useCallback(() => {
     if (!currentCard) return;
 
-    const promoted = promoteCard(currentCard);
+    const promoted = promoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
     setCards(updatedCards);
     saveProgress(updatedCards);
@@ -150,13 +154,13 @@ function App() {
         setCurrentCard(null);
       }
     }, 1000);
-  }, [currentCard, cards]);
+  }, [currentCard, cards, settings]);
 
   // Handle incorrect answer
   const handleIncorrect = useCallback(() => {
     if (!currentCard) return;
 
-    const demoted = demoteCard(currentCard);
+    const demoted = demoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
     setCards(updatedCards);
     saveProgress(updatedCards);
@@ -182,7 +186,7 @@ function App() {
         setCurrentCard(null);
       }
     }, 1500);
-  }, [currentCard, cards]);
+  }, [currentCard, cards, settings]);
 
   // Reset progress
   const resetProgress = () => {
@@ -217,21 +221,23 @@ function App() {
           </div>
         )}
 
-        <div className="lesson-selector">
-          <h2>Select a Lesson</h2>
-          <div className="lesson-buttons">
-            {LESSONS.map((lesson) => (
-              <button
-                key={lesson.id}
-                onClick={() => loadLesson(lesson)}
-                className={currentLesson?.id === lesson.id ? 'lesson-button active' : 'lesson-button'}
-              >
-                <strong>{lesson.name}</strong>
-                <span className="lesson-description">{lesson.description}</span>
-              </button>
-            ))}
+        {!currentCard && cards.length === 0 && (
+          <div className="lesson-selector">
+            <h2>Select a Lesson</h2>
+            <div className="lesson-buttons">
+              {LESSONS.map((lesson) => (
+                <button
+                  key={lesson.id}
+                  onClick={() => loadLesson(lesson)}
+                  className={currentLesson?.id === lesson.id ? 'lesson-button active' : 'lesson-button'}
+                >
+                  <strong>{lesson.name}</strong>
+                  <span className="lesson-description">{lesson.description}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="controls">
           {!isListening && !isInitializing && (
@@ -262,9 +268,17 @@ function App() {
           <button onClick={resetProgress} className="secondary-button">
             🔄 Reset Progress
           </button>
+
+          <button onClick={() => setShowSettings(true)} className="secondary-button">
+            ⚙️ Settings
+          </button>
         </div>
 
         {showProgress && <ProgressDisplay cards={cards} />}
+        {showSettings && <Settings onClose={() => {
+          setShowSettings(false);
+          setSettings(loadSettings());
+        }} />}
 
         {currentCard ? (
           <FlashCard
