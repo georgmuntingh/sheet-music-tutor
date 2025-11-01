@@ -6,7 +6,6 @@ import { Settings } from './components/Settings';
 import { PianoPitchDetector } from './utils/pitchDetection';
 import {
   initializeFlashCards,
-  getNextCard,
   promoteCard,
   demoteCard,
   introduceCard,
@@ -35,43 +34,43 @@ function App() {
 
   // Get next card from queue, repopulating if necessary
   const getNextCardFromQueue = useCallback((allCards: FlashCardType[]): FlashCardType | null => {
-    // If queue has cards, return the first one and remove it from queue
+    // If queue has cards, pop the first one and return it
     if (cardQueue.length > 0) {
       const nextCard = cardQueue[0];
-      setCardQueue(cardQueue.slice(1));
+      setCardQueue(prevQueue => prevQueue.slice(1));
       return nextCard;
     }
 
-    // Queue is empty, need to populate it with due cards
-    const nextCard = getNextCard(allCards);
-    if (!nextCard) {
-      return null;
-    }
-
-    // If next card is a new card (not yet introduced), don't add others to queue
-    // New cards should be introduced one at a time
-    if (nextCard.boxNumber === -1) {
-      return nextCard;
-    }
-
-    // Get all other due cards to populate the queue (excluding new cards)
-    const allDueCards: FlashCardType[] = [];
+    // Queue is empty, need to populate it with all due cards
     const now = Date.now();
+    const dueCards: FlashCardType[] = [];
+    let newCard: FlashCardType | null = null;
 
     for (const card of allCards) {
-      if (card.id === nextCard.id) continue; // Skip the card we're about to show
-      if (card.boxNumber === -1) continue; // Skip new cards - they're introduced one at a time
-
-      if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
+      if (card.boxNumber === -1) {
+        // New card - only take the first one
+        if (!newCard) {
+          newCard = card;
+        }
+      } else if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
         // Due card that's already been introduced
-        allDueCards.push(card);
+        dueCards.push(card);
       }
     }
 
-    // Set the queue with remaining due cards
-    setCardQueue(allDueCards);
+    // If there are due cards, build queue with all of them
+    if (dueCards.length > 0) {
+      const [firstCard, ...restCards] = dueCards;
+      setCardQueue(restCards);
+      return firstCard;
+    }
 
-    return nextCard;
+    // No due cards, return a new card if available
+    if (newCard) {
+      return newCard;
+    }
+
+    return null;
   }, [cardQueue]);
 
   // Load lesson function - injects cards into existing stack
