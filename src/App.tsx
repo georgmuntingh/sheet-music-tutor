@@ -21,6 +21,8 @@ function App() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [detector] = useState(() => new PianoPitchDetector());
   const [isListening, setIsListening] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
@@ -175,10 +177,30 @@ function App() {
     }
   };
 
+  // Countdown effect
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Countdown finished, start listening
+      setCountdown(null);
+      setIsListening(true);
+      setIsPaused(false);
+      detectPitchLoop();
+    }
+  }, [countdown]);
+
   // Stop listening
   const stopListening = () => {
     detector.stop();
     setIsListening(false);
+    setIsPaused(false);
+    setCountdown(null);
     setDetectedNote(null);
     setCountdown(null);
     setIsPaused(false);
@@ -192,6 +214,17 @@ function App() {
 
   // Resume listening
   const resumeListening = () => {
+    setIsPaused(false);
+    detectPitchLoop();
+  };
+
+  // Pause listening
+  const pauseListening = () => {
+    setIsPaused(true);
+  };
+
+  // Continue listening
+  const continueListening = () => {
     setIsPaused(false);
     detectPitchLoop();
   };
@@ -366,6 +399,28 @@ function App() {
             <>
               <button onClick={resumeListening} className="primary-button">
                 ▶ Resume
+              </button>
+              <button onClick={stopListening} className="danger-button">
+                ⏹ Stop Listening
+              </button>
+            </>
+          )}
+
+          {isListening && !isPaused && (
+            <>
+              <button onClick={pauseListening} className="warning-button">
+                ⏸ Pause
+              </button>
+              <button onClick={stopListening} className="danger-button">
+                ⏹ Stop Listening
+              </button>
+            </>
+          )}
+
+          {isListening && isPaused && (
+            <>
+              <button onClick={continueListening} className="primary-button">
+                ▶️ Continue
               </button>
               <button onClick={stopListening} className="danger-button">
                 ⏹ Stop Listening

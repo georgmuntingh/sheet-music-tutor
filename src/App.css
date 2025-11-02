@@ -147,11 +147,31 @@
   background: #f0f0f0;
   color: #333;
   border: 1px solid #ddd;
+  font-size: 1.1rem;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .secondary-button:hover {
   background: #e0e0e0;
   border-color: #ccc;
+}
+
+.warning-button {
+  background: #ffc107;
+  color: #000;
+  border: none;
+  font-size: 1.1rem;
+  padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.warning-button:hover {
+  background: #e0a800;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
 }
 
 .danger-button {
@@ -160,6 +180,8 @@
   border: none;
   font-size: 1.1rem;
   padding: 0.8rem 1.5rem;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .danger-button:hover {
