@@ -82,13 +82,7 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
                   min="0.1"
                   step="0.1"
                   value={msToSeconds(settings.box0Interval)}
-                  onChange={(e) => handleIntervalChange('box0Interval', e.target.value)}
-                  onBlur={(e) => {
-                    const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
-                      handleIntervalChange('box0Interval', String(secondsToMs(value)));
-                    }
-                  }}
+                  onChange={(e) => handleIntervalChange('box0Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
@@ -174,6 +168,73 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
 
           <div className="settings-tip">
             <strong>💡 Tip:</strong> Shorter intervals help with initial learning, while longer intervals reinforce long-term memory.
+          </div>
+
+          <h3>Practice Settings</h3>
+          <p className="settings-description">
+            Configure countdown, timeout, and feedback durations.
+          </p>
+
+          <div className="settings-grid">
+            <div className="setting-item">
+              <label htmlFor="countdown">
+                <strong>Countdown Duration</strong>
+                <span className="interval-display">{formatInterval(settings.countdownDuration)}</span>
+              </label>
+              <div className="input-group">
+                <input
+                  type="number"
+                  id="countdown"
+                  min="0"
+                  step="0.5"
+                  value={msToSeconds(settings.countdownDuration)}
+                  onChange={(e) => handleIntervalChange('countdownDuration', String(secondsToMs(parseFloat(e.target.value))))}
+                />
+                <span className="unit">seconds</span>
+              </div>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.countdownDuration)}</small>
+              <small className="setting-hint">Time to prepare after clicking "Start Listening"</small>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="timeout">
+                <strong>Timeout Length</strong>
+                <span className="interval-display">{formatInterval(settings.timeoutLength)}</span>
+              </label>
+              <div className="input-group">
+                <input
+                  type="number"
+                  id="timeout"
+                  min="0.5"
+                  step="0.5"
+                  value={msToSeconds(settings.timeoutLength)}
+                  onChange={(e) => handleIntervalChange('timeoutLength', String(secondsToMs(parseFloat(e.target.value))))}
+                />
+                <span className="unit">seconds</span>
+              </div>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.timeoutLength)}</small>
+              <small className="setting-hint">Time allowed to answer before marking as fail</small>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="feedback">
+                <strong>Feedback Duration</strong>
+                <span className="interval-display">{formatInterval(settings.feedbackLength)}</span>
+              </label>
+              <div className="input-group">
+                <input
+                  type="number"
+                  id="feedback"
+                  min="0.5"
+                  step="0.5"
+                  value={msToSeconds(settings.feedbackLength)}
+                  onChange={(e) => handleIntervalChange('feedbackLength', String(secondsToMs(parseFloat(e.target.value))))}
+                />
+                <span className="unit">seconds</span>
+              </div>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.feedbackLength)}</small>
+              <small className="setting-hint">How long to show feedback after correct answer</small>
+            </div>
           </div>
         </div>
 
