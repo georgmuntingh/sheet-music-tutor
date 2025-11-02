@@ -6,6 +6,7 @@ import { Settings } from './components/Settings';
 import { PianoPitchDetector } from './utils/pitchDetection';
 import {
   initializeFlashCards,
+  getNextCard,
   promoteCard,
   demoteCard,
   introduceCard,
@@ -30,48 +31,48 @@ function App() {
   const [injectedLessons, setInjectedLessons] = useState<string[]>([]);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  // @ts-ignore - cardQueue is used through setCardQueue functional updates
   const [cardQueue, setCardQueue] = useState<FlashCardType[]>([]);
 
   // Get next card from queue, repopulating if necessary
-  // Returns [nextCard, updatedQueue] to avoid closure issues
-  const getNextCardFromQueue = useCallback((allCards: FlashCardType[], currentQueue: FlashCardType[]): [FlashCardType | null, FlashCardType[]] => {
-    // If queue has cards, return the first one and the remaining queue
-    if (currentQueue.length > 0) {
-      const nextCard = currentQueue[0];
-      const remainingQueue = currentQueue.slice(1);
-      return [nextCard, remainingQueue];
+  const getNextCardFromQueue = useCallback((allCards: FlashCardType[]): FlashCardType | null => {
+    // If queue has cards, return the first one and remove it from queue
+    if (cardQueue.length > 0) {
+      const nextCard = cardQueue[0];
+      setCardQueue(cardQueue.slice(1));
+      return nextCard;
     }
 
-    // Queue is empty, need to populate it with all ready cards
+    // Queue is empty, need to populate it with due cards
+    const nextCard = getNextCard(allCards);
+    if (!nextCard) {
+      return null;
+    }
+
+    // If next card is a new card (not yet introduced), don't add others to queue
+    // New cards should be introduced one at a time
+    if (nextCard.boxNumber === -1) {
+      return nextCard;
+    }
+
+    // Get all other due cards to populate the queue (excluding new cards)
+    const allDueCards: FlashCardType[] = [];
     const now = Date.now();
-    const readyCards: FlashCardType[] = [];
 
     for (const card of allCards) {
-      if (card.boxNumber === -1) {
-        // New card - add only the first one we find, then stop
-        readyCards.push(card);
-        break;
-      } else if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
+      if (card.id === nextCard.id) continue; // Skip the card we're about to show
+      if (card.boxNumber === -1) continue; // Skip new cards - they're introduced one at a time
+
+      if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
         // Due card that's already been introduced
-        readyCards.push(card);
+        allDueCards.push(card);
       }
     }
 
-    if (readyCards.length === 0) {
-      return [null, []];
-    }
+    // Set the queue with remaining due cards
+    setCardQueue(allDueCards);
 
-    // If we found a new card (boxNumber === -1), return it immediately without queuing others
-    if (readyCards[0].boxNumber === -1) {
-      return [readyCards[0], []];
-    }
-
-    // Return first ready card and queue the rest
-    const nextCard = readyCards[0];
-    const newQueue = readyCards.slice(1);
-    return [nextCard, newQueue];
-  }, []);
+    return nextCard;
+  }, [cardQueue]);
 
   // Load lesson function - injects cards into existing stack
   const loadLesson = useCallback((lesson: Lesson, isInitial: boolean = false) => {
@@ -89,10 +90,10 @@ function App() {
     saveInjectedLessons(updatedInjectedLessons);
     saveProgress(updatedCards, updatedInjectedLessons);
 
-    // Clear the queue and get next card when loading a new lesson
-    const [nextCard, newQueue] = getNextCardFromQueue(updatedCards, []);
-    setCardQueue(newQueue);
+    // Clear the queue when loading a new lesson
+    setCardQueue([]);
 
+    const nextCard = getNextCardFromQueue(updatedCards);
     if (nextCard) {
       // If it's a new card, introduce it
       if (nextCard.boxNumber === -1) {
@@ -117,9 +118,7 @@ function App() {
 
     if (savedCards && savedCards.length > 0) {
       setCards(savedCards);
-      const [nextCard, newQueue] = getNextCardFromQueue(savedCards, []);
-      setCardQueue(newQueue);
-
+      const nextCard = getNextCardFromQueue(savedCards);
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
           const introduced = introduceCard(nextCard);
@@ -223,29 +222,23 @@ function App() {
     // Get next card from queue
     setTimeout(() => {
       setDetectedNote(null);
+      const nextCard = getNextCardFromQueue(updatedCards);
 
-      // Use functional state update to get current queue
-      setCardQueue((currentQueue: FlashCardType[]) => {
-        const [nextCard, newQueue] = getNextCardFromQueue(updatedCards, currentQueue);
-
-        if (nextCard) {
-          if (nextCard.boxNumber === -1) {
-            const introduced = introduceCard(nextCard);
-            const cardsWithIntroduced = updatedCards.map(c =>
-              c.id === introduced.id ? introduced : c
-            );
-            setCards(cardsWithIntroduced);
-            setCurrentCard(introduced);
-            saveProgress(cardsWithIntroduced, injectedLessons);
-          } else {
-            setCurrentCard(nextCard);
-          }
+      if (nextCard) {
+        if (nextCard.boxNumber === -1) {
+          const introduced = introduceCard(nextCard);
+          const cardsWithIntroduced = updatedCards.map(c =>
+            c.id === introduced.id ? introduced : c
+          );
+          setCards(cardsWithIntroduced);
+          setCurrentCard(introduced);
+          saveProgress(cardsWithIntroduced, injectedLessons);
         } else {
-          setCurrentCard(null);
+          setCurrentCard(nextCard);
         }
-
-        return newQueue;
-      });
+      } else {
+        setCurrentCard(null);
+      }
     }, 1000);
   }, [currentCard, cards, settings, injectedLessons, getNextCardFromQueue]);
 
@@ -261,29 +254,23 @@ function App() {
     // Get next card from queue
     setTimeout(() => {
       setDetectedNote(null);
+      const nextCard = getNextCardFromQueue(updatedCards);
 
-      // Use functional state update to get current queue
-      setCardQueue((currentQueue: FlashCardType[]) => {
-        const [nextCard, newQueue] = getNextCardFromQueue(updatedCards, currentQueue);
-
-        if (nextCard) {
-          if (nextCard.boxNumber === -1) {
-            const introduced = introduceCard(nextCard);
-            const cardsWithIntroduced = updatedCards.map(c =>
-              c.id === introduced.id ? introduced : c
-            );
-            setCards(cardsWithIntroduced);
-            setCurrentCard(introduced);
-            saveProgress(cardsWithIntroduced, injectedLessons);
-          } else {
-            setCurrentCard(nextCard);
-          }
+      if (nextCard) {
+        if (nextCard.boxNumber === -1) {
+          const introduced = introduceCard(nextCard);
+          const cardsWithIntroduced = updatedCards.map(c =>
+            c.id === introduced.id ? introduced : c
+          );
+          setCards(cardsWithIntroduced);
+          setCurrentCard(introduced);
+          saveProgress(cardsWithIntroduced, injectedLessons);
         } else {
-          setCurrentCard(null);
+          setCurrentCard(nextCard);
         }
-
-        return newQueue;
-      });
+      } else {
+        setCurrentCard(null);
+      }
     }, 1500);
   }, [currentCard, cards, settings, injectedLessons, getNextCardFromQueue]);
 
