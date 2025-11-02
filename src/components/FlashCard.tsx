@@ -24,21 +24,27 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const [showNote, setShowNote] = useState(false);
   const [detectionTimer, setDetectionTimer] = useState<number | null>(null);
   const [stableNote, setStableNote] = useState<string | null>(null);
+  const [hasAnswered, setHasAnswered] = useState(false);
 
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
-  // Clear detection timer when component unmounts or card changes
+  // Reset state when card changes
   useEffect(() => {
+    setHasAnswered(false);
+    setFeedback(null);
+    setShowNote(false);
+    setStableNote(null);
+
     return () => {
       if (detectionTimer) {
         clearTimeout(detectionTimer);
       }
     };
-  }, [detectionTimer, card.id]);
+  }, [card.id]);
 
   // Handle note detection with delay
   useEffect(() => {
-    if (!isListening || feedback || isPaused) {
+    if (!isListening || feedback || isPaused || hasAnswered) {
       // Clear any pending timer when paused
       if (isPaused && detectionTimer) {
         clearTimeout(detectionTimer);
@@ -62,6 +68,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             // After 500ms, make the judgment
             if (detectedNote === expectedNote) {
               setFeedback('correct');
+              setHasAnswered(true);
               setTimeout(() => {
                 onCorrect();
                 setFeedback(null);
@@ -70,6 +77,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               }, 1000);
             } else {
               setFeedback('incorrect');
+              setHasAnswered(true);
               setTimeout(() => {
                 onIncorrect();
                 setFeedback(null);
@@ -90,6 +98,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           // After 500ms, make the judgment
           if (detectedNote === expectedNote) {
             setFeedback('correct');
+            setHasAnswered(true);
             setTimeout(() => {
               onCorrect();
               setFeedback(null);
@@ -98,6 +107,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             }, 1000);
           } else {
             setFeedback('incorrect');
+            setHasAnswered(true);
             setTimeout(() => {
               onIncorrect();
               setFeedback(null);
@@ -118,7 +128,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         setStableNote(null);
       }
     }
-  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused]);
+  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused, hasAnswered]);
 
   return (
     <div className={`flash-card ${feedback || ''}`}>
