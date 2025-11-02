@@ -174,27 +174,25 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessonIds);
 
-    // Get next card
-    setTimeout(() => {
-      setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+    // Get next card immediately (FlashCard.tsx handles visual delay)
+    setDetectedNote(null);
+    const nextCard = getNextCard(updatedCards);
 
-      if (nextCard) {
-        if (nextCard.boxNumber === -1) {
-          const introduced = introduceCard(nextCard);
-          const cardsWithIntroduced = updatedCards.map(c =>
-            c.id === introduced.id ? introduced : c
-          );
-          setCards(cardsWithIntroduced);
-          setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced, injectedLessonIds);
-        } else {
-          setCurrentCard(nextCard);
-        }
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const cardsWithIntroduced = updatedCards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(cardsWithIntroduced);
+        setCurrentCard(introduced);
+        saveProgress(cardsWithIntroduced, injectedLessonIds);
       } else {
-        setCurrentCard(null);
+        setCurrentCard(nextCard);
       }
-    }, 1000);
+    } else {
+      setCurrentCard(null);
+    }
   }, [currentCard, cards, settings, injectedLessonIds]);
 
   // Handle incorrect answer
@@ -206,28 +204,48 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessonIds);
 
-    // Get next card
-    setTimeout(() => {
-      setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+    // Get next card immediately (FlashCard.tsx handles visual delay)
+    setDetectedNote(null);
+    const nextCard = getNextCard(updatedCards);
 
-      if (nextCard) {
-        if (nextCard.boxNumber === -1) {
-          const introduced = introduceCard(nextCard);
-          const cardsWithIntroduced = updatedCards.map(c =>
-            c.id === introduced.id ? introduced : c
-          );
-          setCards(cardsWithIntroduced);
-          setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced, injectedLessonIds);
-        } else {
-          setCurrentCard(nextCard);
-        }
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const cardsWithIntroduced = updatedCards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(cardsWithIntroduced);
+        setCurrentCard(introduced);
+        saveProgress(cardsWithIntroduced, injectedLessonIds);
       } else {
-        setCurrentCard(null);
+        setCurrentCard(nextCard);
       }
-    }, 1500);
+    } else {
+      setCurrentCard(null);
+    }
   }, [currentCard, cards, settings, injectedLessonIds]);
+
+  // Handle manual next card (for backup button)
+  const handleNextCard = useCallback(() => {
+    setDetectedNote(null);
+    const nextCard = getNextCard(cards);
+
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const updatedCards = cards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(updatedCards);
+        setCurrentCard(introduced);
+        saveProgress(updatedCards, injectedLessonIds);
+      } else {
+        setCurrentCard(nextCard);
+      }
+    } else {
+      setCurrentCard(null);
+    }
+  }, [cards, injectedLessonIds]);
 
   // Reset progress
   const resetProgress = () => {
@@ -339,6 +357,7 @@ function App() {
             card={currentCard}
             onCorrect={handleCorrect}
             onIncorrect={handleIncorrect}
+            onNextCard={handleNextCard}
             isListening={isListening}
             detectedNote={detectedNote}
             isPaused={isPaused}
