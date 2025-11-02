@@ -28,13 +28,6 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
-  // Reset state when card changes
-  useEffect(() => {
-    setFeedback(null);
-    setShowNote(false);
-    setStableNote(null);
-  }, [card.id]);
-
   // Clear timers when component unmounts or card changes
   useEffect(() => {
     return () => {
@@ -55,6 +48,9 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         setFeedback('incorrect');
         setTimeout(() => {
           onIncorrect();
+          setFeedback(null);
+          setShowNote(false);
+          setStableNote(null);
         }, settings.feedbackLength);
       }, settings.timeoutLength);
 
@@ -95,16 +91,17 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               setFeedback('correct');
               setTimeout(() => {
                 onCorrect();
+                setFeedback(null);
+                setShowNote(false);
+                setStableNote(null);
               }, settings.feedbackLength);
             } else {
-              // Clear the timeout timer on incorrect answer too
-              if (timeoutTimer) {
-                clearTimeout(timeoutTimer);
-                setTimeoutTimer(null);
-              }
               setFeedback('incorrect');
               setTimeout(() => {
                 onIncorrect();
+                setFeedback(null);
+                setShowNote(false);
+                setStableNote(null);
               }, settings.feedbackLength);
             }
             setDetectionTimer(null);
@@ -127,16 +124,17 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             setFeedback('correct');
             setTimeout(() => {
               onCorrect();
+              setFeedback(null);
+              setShowNote(false);
+              setStableNote(null);
             }, settings.feedbackLength);
           } else {
-            // Clear the timeout timer on incorrect answer too
-            if (timeoutTimer) {
-              clearTimeout(timeoutTimer);
-              setTimeoutTimer(null);
-            }
             setFeedback('incorrect');
             setTimeout(() => {
               onIncorrect();
+              setFeedback(null);
+              setShowNote(false);
+              setStableNote(null);
             }, settings.feedbackLength);
           }
           setDetectionTimer(null);
