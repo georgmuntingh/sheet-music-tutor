@@ -30,8 +30,6 @@ function App() {
   const [isInitializing, setIsInitializing] = useState(false);
   const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
   const [injectedLessons, setInjectedLessons] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
   // @ts-ignore - cardQueue is used through setCardQueue functional updates
   const [cardQueue, setCardQueue] = useState<FlashCardType[]>([]);
 
@@ -202,8 +200,6 @@ function App() {
     setIsPaused(false);
     setCountdown(null);
     setDetectedNote(null);
-    setCountdown(null);
-    setIsPaused(false);
   };
 
   // Pause listening
@@ -214,17 +210,6 @@ function App() {
 
   // Resume listening
   const resumeListening = () => {
-    setIsPaused(false);
-    detectPitchLoop();
-  };
-
-  // Pause listening
-  const pauseListening = () => {
-    setIsPaused(true);
-  };
-
-  // Continue listening
-  const continueListening = () => {
     setIsPaused(false);
     detectPitchLoop();
   };
@@ -399,28 +384,6 @@ function App() {
             <>
               <button onClick={resumeListening} className="primary-button">
                 ▶ Resume
-              </button>
-              <button onClick={stopListening} className="danger-button">
-                ⏹ Stop Listening
-              </button>
-            </>
-          )}
-
-          {isListening && !isPaused && (
-            <>
-              <button onClick={pauseListening} className="warning-button">
-                ⏸ Pause
-              </button>
-              <button onClick={stopListening} className="danger-button">
-                ⏹ Stop Listening
-              </button>
-            </>
-          )}
-
-          {isListening && isPaused && (
-            <>
-              <button onClick={continueListening} className="primary-button">
-                ▶️ Continue
               </button>
               <button onClick={stopListening} className="danger-button">
                 ⏹ Stop Listening
