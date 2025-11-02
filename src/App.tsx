@@ -11,7 +11,7 @@ import {
   demoteCard,
   introduceCard,
 } from './utils/leitnerSystem';
-import { saveProgress, loadProgress, loadInjectedLessons, saveInjectedLessons } from './utils/storage';
+import { saveProgress, loadProgress } from './utils/storage';
 import { loadSettings } from './utils/settingsStorage';
 import { LESSONS } from './utils/lessons';
 import './App.css';
@@ -28,49 +28,34 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
-  const [injectedLessons, setInjectedLessons] = useState<string[]>([]);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [isPaused, setIsPaused] = useState(false);
 
-  // Load lesson function - injects cards into existing stack
-  const loadLesson = useCallback((lesson: Lesson, isInitial: boolean = false) => {
-    const newLessonCards = initializeFlashCards(lesson.notes);
-
-    // Inject cards into existing stack instead of replacing
-    const updatedCards = isInitial ? newLessonCards : [...cards, ...newLessonCards];
-
-    setCards(updatedCards);
+  // Load lesson function
+  const loadLesson = useCallback((lesson: Lesson) => {
+    const newCards = initializeFlashCards(lesson.notes);
+    setCards(newCards);
     setCurrentLesson(lesson);
+    saveProgress(newCards);
 
-    // Track this lesson as injected
-    const updatedInjectedLessons = [...injectedLessons, lesson.id];
-    setInjectedLessons(updatedInjectedLessons);
-    saveInjectedLessons(updatedInjectedLessons);
-    saveProgress(updatedCards, updatedInjectedLessons);
-
-    const nextCard = getNextCard(updatedCards);
+    const nextCard = getNextCard(newCards);
     if (nextCard) {
       // If it's a new card, introduce it
       if (nextCard.boxNumber === -1) {
         const introduced = introduceCard(nextCard);
-        const cardsWithIntroduced = updatedCards.map(c =>
+        const updatedCards = newCards.map(c =>
           c.id === introduced.id ? introduced : c
         );
-        setCards(cardsWithIntroduced);
+        setCards(updatedCards);
         setCurrentCard(introduced);
-        saveProgress(cardsWithIntroduced, updatedInjectedLessons);
+        saveProgress(updatedCards);
       } else {
         setCurrentCard(nextCard);
       }
     }
-  }, [cards, injectedLessons]);
+  }, []);
 
   // Initialize with first lesson on mount
   useEffect(() => {
     const savedCards = loadProgress();
-    const savedInjectedLessons = loadInjectedLessons();
-    setInjectedLessons(savedInjectedLessons);
-
     if (savedCards && savedCards.length > 0) {
       setCards(savedCards);
       const nextCard = getNextCard(savedCards);
@@ -82,14 +67,14 @@ function App() {
           );
           setCards(updatedCards);
           setCurrentCard(introduced);
-          saveProgress(updatedCards, savedInjectedLessons);
+          saveProgress(updatedCards);
         } else {
           setCurrentCard(nextCard);
         }
       }
     } else {
       // Start with first lesson if no saved progress
-      loadLesson(LESSONS[0], true);
+      loadLesson(LESSONS[0]);
     }
 
     // Cleanup detector on unmount
@@ -105,23 +90,11 @@ function App() {
 
     try {
       await detector.initialize();
+      setIsListening(true);
       setIsInitializing(false);
 
-      // Start countdown
-      const countdownSeconds = Math.ceil(settings.countdownDuration / 1000);
-      setCountdown(countdownSeconds);
-
-      const countdownInterval = setInterval(() => {
-        setCountdown(prev => {
-          if (prev === null || prev <= 1) {
-            clearInterval(countdownInterval);
-            setIsListening(true);
-            detectPitchLoop();
-            return null;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      // Start pitch detection loop
+      detectPitchLoop();
     } catch (err) {
       setError('Failed to access microphone. Please allow microphone access and try again.');
       setIsInitializing(false);
@@ -134,36 +107,22 @@ function App() {
     detector.stop();
     setIsListening(false);
     setDetectedNote(null);
-    setCountdown(null);
-    setIsPaused(false);
-  };
-
-  // Pause listening
-  const pauseListening = () => {
-    detector.stop();
-    setIsPaused(true);
-  };
-
-  // Resume listening
-  const resumeListening = () => {
-    setIsPaused(false);
-    detectPitchLoop();
   };
 
   // Pitch detection loop
   const detectPitchLoop = useCallback(async () => {
-    if (!detector.getIsRunning() || isPaused) return;
+    if (!detector.getIsRunning()) return;
 
     const note = await detector.detectPitchStable(300, 2);
-    if (note && !isPaused) {
+    if (note) {
       setDetectedNote(`${note.name}${note.octave}`);
     }
 
-    // Continue detection if still listening and not paused
-    if (detector.getIsRunning() && !isPaused) {
+    // Continue detection if still listening
+    if (detector.getIsRunning()) {
       setTimeout(detectPitchLoop, 100);
     }
-  }, [detector, isPaused]);
+  }, [detector]);
 
   // Handle correct answer
   const handleCorrect = useCallback(() => {
@@ -172,7 +131,7 @@ function App() {
     const promoted = promoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards, injectedLessons);
+    saveProgress(updatedCards);
 
     // Get next card
     setTimeout(() => {
@@ -187,7 +146,7 @@ function App() {
           );
           setCards(cardsWithIntroduced);
           setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced, injectedLessons);
+          saveProgress(cardsWithIntroduced);
         } else {
           setCurrentCard(nextCard);
         }
@@ -195,7 +154,7 @@ function App() {
         setCurrentCard(null);
       }
     }, 1000);
-  }, [currentCard, cards, settings, injectedLessons]);
+  }, [currentCard, cards, settings]);
 
   // Handle incorrect answer
   const handleIncorrect = useCallback(() => {
@@ -204,7 +163,7 @@ function App() {
     const demoted = demoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards, injectedLessons);
+    saveProgress(updatedCards);
 
     // Get next card
     setTimeout(() => {
@@ -219,7 +178,7 @@ function App() {
           );
           setCards(cardsWithIntroduced);
           setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced, injectedLessons);
+          saveProgress(cardsWithIntroduced);
         } else {
           setCurrentCard(nextCard);
         }
@@ -227,16 +186,24 @@ function App() {
         setCurrentCard(null);
       }
     }, 1500);
-  }, [currentCard, cards, settings, injectedLessons]);
+  }, [currentCard, cards, settings]);
 
   // Reset progress
   const resetProgress = () => {
     if (confirm('Are you sure you want to reset all progress?')) {
-      setCards([]);
-      setCurrentCard(null);
-      setInjectedLessons([]);
-      saveProgress([]);
-      saveInjectedLessons([]);
+      const newCards = initializeFlashCards();
+      setCards(newCards);
+      saveProgress(newCards);
+      const nextCard = getNextCard(newCards);
+      if (nextCard && nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const updatedCards = newCards.map(c => c.id === introduced.id ? introduced : c);
+        setCards(updatedCards);
+        setCurrentCard(introduced);
+        saveProgress(updatedCards);
+      } else {
+        setCurrentCard(nextCard);
+      }
     }
   };
 
@@ -273,7 +240,7 @@ function App() {
         )}
 
         <div className="controls">
-          {!isListening && !isInitializing && countdown === null && (
+          {!isListening && !isInitializing && (
             <button onClick={startListening} className="primary-button">
               🎤 Start Listening
             </button>
@@ -285,33 +252,10 @@ function App() {
             </button>
           )}
 
-          {countdown !== null && (
-            <div className="countdown-display">
-              <div className="countdown-number">{countdown}</div>
-              <div className="countdown-text">Get ready...</div>
-            </div>
-          )}
-
-          {isListening && !isPaused && (
-            <>
-              <button onClick={pauseListening} className="warning-button">
-                ⏸ Pause
-              </button>
-              <button onClick={stopListening} className="danger-button">
-                ⏹ Stop Listening
-              </button>
-            </>
-          )}
-
-          {isListening && isPaused && (
-            <>
-              <button onClick={resumeListening} className="primary-button">
-                ▶ Resume
-              </button>
-              <button onClick={stopListening} className="danger-button">
-                ⏹ Stop Listening
-              </button>
-            </>
+          {isListening && (
+            <button onClick={stopListening} className="danger-button">
+              ⏹ Stop Listening
+            </button>
           )}
 
           <button
@@ -341,33 +285,14 @@ function App() {
             card={currentCard}
             onCorrect={handleCorrect}
             onIncorrect={handleIncorrect}
-            isListening={isListening && !isPaused}
+            isListening={isListening}
             detectedNote={detectedNote}
-            settings={settings}
           />
         ) : (
-          <div className="lesson-selector">
-            <h2>Select a Lesson to Inject</h2>
-            <p className="lesson-info">
-              No cards are currently due for review. Select a lesson to add more cards to your stack.
-            </p>
-            <div className="lesson-buttons">
-              {LESSONS.map((lesson) => {
-                const isInjected = injectedLessons.includes(lesson.id);
-                return (
-                  <button
-                    key={lesson.id}
-                    onClick={() => !isInjected && loadLesson(lesson)}
-                    className={isInjected ? 'lesson-button injected' : 'lesson-button'}
-                    disabled={isInjected}
-                  >
-                    <strong>{lesson.name}</strong>
-                    <span className="lesson-description">{lesson.description}</span>
-                    {isInjected && <span className="injected-badge">✓ Injected</span>}
-                  </button>
-                );
-              })}
-            </div>
+          <div className="no-cards">
+            <h2>Congratulations!</h2>
+            <p>You've reviewed all available cards.</p>
+            <p>Come back later for more reviews.</p>
           </div>
         )}
       </main>

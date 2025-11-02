@@ -9,9 +9,6 @@ export const DEFAULT_SETTINGS: RehearsalSettings = {
   box2Interval: 60 * 60 * 1000, // Box 2: 1 hour
   box3Interval: 24 * 60 * 60 * 1000, // Box 3: 1 day
   box4Interval: 7 * 24 * 60 * 60 * 1000, // Box 4: 1 week
-  countdownDuration: 5000,      // 5 seconds countdown before starting
-  timeoutLength: 2000,          // 2 seconds timeout for answering
-  feedbackLength: 2000,         // 2 seconds feedback display
 };
 
 export const saveSettings = (settings: RehearsalSettings): void => {
@@ -26,9 +23,7 @@ export const loadSettings = (): RehearsalSettings => {
   try {
     const stored = localStorage.getItem(SETTINGS_KEY);
     if (stored) {
-      const parsed = JSON.parse(stored);
-      // Merge with defaults to handle missing properties (backwards compatibility)
-      return { ...DEFAULT_SETTINGS, ...parsed };
+      return JSON.parse(stored);
     }
   } catch (error) {
     console.error('Failed to load settings:', error);
