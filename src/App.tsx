@@ -28,6 +28,8 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
 
   // Load lesson function
   const loadLesson = useCallback((lesson: Lesson) => {
@@ -83,15 +85,37 @@ function App() {
     };
   }, [detector, loadLesson]);
 
-  // Start listening for piano input
-  const startListening = async () => {
-    setIsInitializing(true);
+  // Start countdown before listening
+  const startListening = () => {
+    setCountdown(3);
     setError(null);
+  };
+
+  // Countdown effect
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (countdown === 0) {
+      // Countdown finished, start actual listening
+      actuallyStartListening();
+      setCountdown(null);
+    }
+  }, [countdown]);
+
+  // Actually start listening after countdown
+  const actuallyStartListening = async () => {
+    setIsInitializing(true);
 
     try {
       await detector.initialize();
       setIsListening(true);
       setIsInitializing(false);
+      setIsPaused(false);
 
       // Start pitch detection loop
       detectPitchLoop();
@@ -107,6 +131,11 @@ function App() {
     detector.stop();
     setIsListening(false);
     setDetectedNote(null);
+  };
+
+  // Toggle pause/continue
+  const togglePause = () => {
+    setIsPaused(!isPaused);
   };
 
   // Pitch detection loop
@@ -240,10 +269,17 @@ function App() {
         )}
 
         <div className="controls">
-          {!isListening && !isInitializing && (
+          {!isListening && !isInitializing && countdown === null && (
             <button onClick={startListening} className="primary-button">
               🎤 Start Listening
             </button>
+          )}
+
+          {countdown !== null && countdown > 0 && (
+            <div className="countdown-display">
+              <h2>Get ready...</h2>
+              <div className="countdown-number">{countdown}</div>
+            </div>
           )}
 
           {isInitializing && (
@@ -253,9 +289,14 @@ function App() {
           )}
 
           {isListening && (
-            <button onClick={stopListening} className="danger-button">
-              ⏹ Stop Listening
-            </button>
+            <>
+              <button onClick={stopListening} className="danger-button">
+                ⏹ Stop Listening
+              </button>
+              <button onClick={togglePause} className="secondary-button">
+                {isPaused ? '▶️ Continue' : '⏸ Pause'}
+              </button>
+            </>
           )}
 
           <button
@@ -287,6 +328,7 @@ function App() {
             onIncorrect={handleIncorrect}
             isListening={isListening}
             detectedNote={detectedNote}
+            isPaused={isPaused}
           />
         ) : (
           <div className="no-cards">
