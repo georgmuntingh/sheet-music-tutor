@@ -38,6 +38,7 @@ export interface LearningProgress {
   totalReviews: number;
   correctReviews: number;
   currentLessonId?: string;
+  injectedLessonIds: string[]; // Track which lessons have been injected into the stack
 }
 
 // Settings for rehearsal intervals (in milliseconds)

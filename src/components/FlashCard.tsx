@@ -7,6 +7,7 @@ interface FlashCardProps {
   card: FlashCardType;
   onCorrect: () => void;
   onIncorrect: () => void;
+  onNextCard: () => void;
   isListening: boolean;
   detectedNote: string | null;
   isPaused: boolean;
@@ -16,6 +17,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   card,
   onCorrect,
   onIncorrect,
+  onNextCard,
   isListening,
   detectedNote,
   isPaused,
@@ -71,18 +73,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               setHasAnswered(true);
               setTimeout(() => {
                 onCorrect();
-                setFeedback(null);
-                setShowNote(false);
-                setStableNote(null);
               }, 1000);
             } else {
               setFeedback('incorrect');
               setHasAnswered(true);
               setTimeout(() => {
                 onIncorrect();
-                setFeedback(null);
-                setShowNote(false);
-                setStableNote(null);
               }, 1500);
             }
             setDetectionTimer(null);
@@ -101,18 +97,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             setHasAnswered(true);
             setTimeout(() => {
               onCorrect();
-              setFeedback(null);
-              setShowNote(false);
-              setStableNote(null);
             }, 1000);
           } else {
             setFeedback('incorrect');
             setHasAnswered(true);
             setTimeout(() => {
               onIncorrect();
-              setFeedback(null);
-              setShowNote(false);
-              setStableNote(null);
             }, 1500);
           }
           setDetectionTimer(null);
@@ -183,6 +173,15 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           </div>
         )}
       </div>
+
+      {feedback && (
+        <button
+          className="next-card-button"
+          onClick={onNextCard}
+        >
+          Next Card →
+        </button>
+      )}
 
       <button
         className="reveal-button"

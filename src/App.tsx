@@ -19,7 +19,7 @@ import './App.css';
 function App() {
   const [cards, setCards] = useState<FlashCardType[]>([]);
   const [currentCard, setCurrentCard] = useState<FlashCardType | null>(null);
-  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
+  const [injectedLessonIds, setInjectedLessonIds] = useState<string[]>([]);
   const [detector] = useState(() => new PianoPitchDetector());
   const [isListening, setIsListening] = useState(false);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
@@ -31,59 +31,71 @@ function App() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Load lesson function
-  const loadLesson = useCallback((lesson: Lesson) => {
-    const newCards = initializeFlashCards(lesson.notes);
-    setCards(newCards);
-    setCurrentLesson(lesson);
-    saveProgress(newCards);
+  // Inject lesson into stack (adds cards to existing stack)
+  const injectLesson = useCallback((lesson: Lesson) => {
+    // Don't inject if already injected
+    if (injectedLessonIds.includes(lesson.id)) {
+      return;
+    }
 
-    const nextCard = getNextCard(newCards);
+    const newCards = initializeFlashCards(lesson.notes);
+    const updatedCards = [...cards, ...newCards];
+    const updatedInjectedIds = [...injectedLessonIds, lesson.id];
+
+    setCards(updatedCards);
+    setInjectedLessonIds(updatedInjectedIds);
+    saveProgress(updatedCards, updatedInjectedIds);
+
+    const nextCard = getNextCard(updatedCards);
     if (nextCard) {
       // If it's a new card, introduce it
       if (nextCard.boxNumber === -1) {
         const introduced = introduceCard(nextCard);
-        const updatedCards = newCards.map(c =>
+        const cardsWithIntroduced = updatedCards.map(c =>
           c.id === introduced.id ? introduced : c
         );
-        setCards(updatedCards);
+        setCards(cardsWithIntroduced);
         setCurrentCard(introduced);
-        saveProgress(updatedCards);
+        saveProgress(cardsWithIntroduced, updatedInjectedIds);
       } else {
         setCurrentCard(nextCard);
       }
     }
-  }, []);
+  }, [cards, injectedLessonIds]);
 
-  // Initialize with first lesson on mount
+  // Initialize on mount
   useEffect(() => {
-    const savedCards = loadProgress();
-    if (savedCards && savedCards.length > 0) {
-      setCards(savedCards);
-      const nextCard = getNextCard(savedCards);
+    const savedProgress = loadProgress();
+    if (savedProgress && savedProgress.cards.length > 0) {
+      setCards(savedProgress.cards);
+      setInjectedLessonIds(savedProgress.injectedLessonIds || []);
+
+      const nextCard = getNextCard(savedProgress.cards);
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
           const introduced = introduceCard(nextCard);
-          const updatedCards = savedCards.map(c =>
+          const updatedCards = savedProgress.cards.map(c =>
             c.id === introduced.id ? introduced : c
           );
           setCards(updatedCards);
           setCurrentCard(introduced);
-          saveProgress(updatedCards);
+          saveProgress(updatedCards, savedProgress.injectedLessonIds || []);
         } else {
           setCurrentCard(nextCard);
         }
       }
     } else {
-      // Start with first lesson if no saved progress
-      loadLesson(LESSONS[0]);
+      // Start with empty stack - show lesson selector
+      setCards([]);
+      setInjectedLessonIds([]);
+      setCurrentCard(null);
     }
 
     // Cleanup detector on unmount
     return () => {
       detector.stop();
     };
-  }, [detector, loadLesson]);
+  }, [detector]);
 
   // Start countdown before listening
   const startListening = () => {
@@ -160,30 +172,28 @@ function App() {
     const promoted = promoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards);
+    saveProgress(updatedCards, injectedLessonIds);
 
-    // Get next card
-    setTimeout(() => {
-      setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+    // Get next card immediately (FlashCard.tsx handles visual delay)
+    setDetectedNote(null);
+    const nextCard = getNextCard(updatedCards);
 
-      if (nextCard) {
-        if (nextCard.boxNumber === -1) {
-          const introduced = introduceCard(nextCard);
-          const cardsWithIntroduced = updatedCards.map(c =>
-            c.id === introduced.id ? introduced : c
-          );
-          setCards(cardsWithIntroduced);
-          setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced);
-        } else {
-          setCurrentCard(nextCard);
-        }
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const cardsWithIntroduced = updatedCards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(cardsWithIntroduced);
+        setCurrentCard(introduced);
+        saveProgress(cardsWithIntroduced, injectedLessonIds);
       } else {
-        setCurrentCard(null);
+        setCurrentCard(nextCard);
       }
-    }, 1000);
-  }, [currentCard, cards, settings]);
+    } else {
+      setCurrentCard(null);
+    }
+  }, [currentCard, cards, settings, injectedLessonIds]);
 
   // Handle incorrect answer
   const handleIncorrect = useCallback(() => {
@@ -192,47 +202,58 @@ function App() {
     const demoted = demoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards);
+    saveProgress(updatedCards, injectedLessonIds);
 
-    // Get next card
-    setTimeout(() => {
-      setDetectedNote(null);
-      const nextCard = getNextCard(updatedCards);
+    // Get next card immediately (FlashCard.tsx handles visual delay)
+    setDetectedNote(null);
+    const nextCard = getNextCard(updatedCards);
 
-      if (nextCard) {
-        if (nextCard.boxNumber === -1) {
-          const introduced = introduceCard(nextCard);
-          const cardsWithIntroduced = updatedCards.map(c =>
-            c.id === introduced.id ? introduced : c
-          );
-          setCards(cardsWithIntroduced);
-          setCurrentCard(introduced);
-          saveProgress(cardsWithIntroduced);
-        } else {
-          setCurrentCard(nextCard);
-        }
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const cardsWithIntroduced = updatedCards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(cardsWithIntroduced);
+        setCurrentCard(introduced);
+        saveProgress(cardsWithIntroduced, injectedLessonIds);
       } else {
-        setCurrentCard(null);
+        setCurrentCard(nextCard);
       }
-    }, 1500);
-  }, [currentCard, cards, settings]);
+    } else {
+      setCurrentCard(null);
+    }
+  }, [currentCard, cards, settings, injectedLessonIds]);
+
+  // Handle manual next card (for backup button)
+  const handleNextCard = useCallback(() => {
+    setDetectedNote(null);
+    const nextCard = getNextCard(cards);
+
+    if (nextCard) {
+      if (nextCard.boxNumber === -1) {
+        const introduced = introduceCard(nextCard);
+        const updatedCards = cards.map(c =>
+          c.id === introduced.id ? introduced : c
+        );
+        setCards(updatedCards);
+        setCurrentCard(introduced);
+        saveProgress(updatedCards, injectedLessonIds);
+      } else {
+        setCurrentCard(nextCard);
+      }
+    } else {
+      setCurrentCard(null);
+    }
+  }, [cards, injectedLessonIds]);
 
   // Reset progress
   const resetProgress = () => {
     if (confirm('Are you sure you want to reset all progress?')) {
-      const newCards = initializeFlashCards();
-      setCards(newCards);
-      saveProgress(newCards);
-      const nextCard = getNextCard(newCards);
-      if (nextCard && nextCard.boxNumber === -1) {
-        const introduced = introduceCard(nextCard);
-        const updatedCards = newCards.map(c => c.id === introduced.id ? introduced : c);
-        setCards(updatedCards);
-        setCurrentCard(introduced);
-        saveProgress(updatedCards);
-      } else {
-        setCurrentCard(nextCard);
-      }
+      setCards([]);
+      setInjectedLessonIds([]);
+      setCurrentCard(null);
+      saveProgress([], []);
     }
   };
 
@@ -250,20 +271,30 @@ function App() {
           </div>
         )}
 
-        {!currentCard && cards.length === 0 && (
+        {!currentCard && (
           <div className="lesson-selector">
-            <h2>Select a Lesson</h2>
+            <h2>Select a Lesson to Inject into Stack</h2>
+            <p className="lesson-hint">
+              {cards.length === 0
+                ? "Get started by selecting your first lesson!"
+                : "All cards reviewed! Choose another lesson to continue learning."}
+            </p>
             <div className="lesson-buttons">
-              {LESSONS.map((lesson) => (
-                <button
-                  key={lesson.id}
-                  onClick={() => loadLesson(lesson)}
-                  className={currentLesson?.id === lesson.id ? 'lesson-button active' : 'lesson-button'}
-                >
-                  <strong>{lesson.name}</strong>
-                  <span className="lesson-description">{lesson.description}</span>
-                </button>
-              ))}
+              {LESSONS.map((lesson) => {
+                const isInjected = injectedLessonIds.includes(lesson.id);
+                return (
+                  <button
+                    key={lesson.id}
+                    onClick={() => injectLesson(lesson)}
+                    disabled={isInjected}
+                    className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                  >
+                    <strong>{lesson.name}</strong>
+                    <span className="lesson-description">{lesson.description}</span>
+                    {isInjected && <span className="injected-badge">✓ Injected</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -321,21 +352,16 @@ function App() {
           setSettings(loadSettings());
         }} />}
 
-        {currentCard ? (
+        {currentCard && (
           <FlashCard
             card={currentCard}
             onCorrect={handleCorrect}
             onIncorrect={handleIncorrect}
+            onNextCard={handleNextCard}
             isListening={isListening}
             detectedNote={detectedNote}
             isPaused={isPaused}
           />
-        ) : (
-          <div className="no-cards">
-            <h2>Congratulations!</h2>
-            <p>You've reviewed all available cards.</p>
-            <p>Come back later for more reviews.</p>
-          </div>
         )}
       </main>
 
