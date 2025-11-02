@@ -31,48 +31,6 @@ function App() {
   const [injectedLessons, setInjectedLessons] = useState<string[]>([]);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [cardQueue, setCardQueue] = useState<FlashCardType[]>([]);
-
-  // Get next card from queue, repopulating if necessary
-  const getNextCardFromQueue = useCallback((allCards: FlashCardType[]): FlashCardType | null => {
-    // If queue has cards, return the first one and remove it from queue
-    if (cardQueue.length > 0) {
-      const nextCard = cardQueue[0];
-      setCardQueue(cardQueue.slice(1));
-      return nextCard;
-    }
-
-    // Queue is empty, need to populate it with due cards
-    const nextCard = getNextCard(allCards);
-    if (!nextCard) {
-      return null;
-    }
-
-    // If next card is a new card (not yet introduced), don't add others to queue
-    // New cards should be introduced one at a time
-    if (nextCard.boxNumber === -1) {
-      return nextCard;
-    }
-
-    // Get all other due cards to populate the queue (excluding new cards)
-    const allDueCards: FlashCardType[] = [];
-    const now = Date.now();
-
-    for (const card of allCards) {
-      if (card.id === nextCard.id) continue; // Skip the card we're about to show
-      if (card.boxNumber === -1) continue; // Skip new cards - they're introduced one at a time
-
-      if (card.boxNumber >= 0 && card.nextReviewDate <= now) {
-        // Due card that's already been introduced
-        allDueCards.push(card);
-      }
-    }
-
-    // Set the queue with remaining due cards
-    setCardQueue(allDueCards);
-
-    return nextCard;
-  }, [cardQueue]);
 
   // Load lesson function - injects cards into existing stack
   const loadLesson = useCallback((lesson: Lesson, isInitial: boolean = false) => {
@@ -90,10 +48,7 @@ function App() {
     saveInjectedLessons(updatedInjectedLessons);
     saveProgress(updatedCards, updatedInjectedLessons);
 
-    // Clear the queue when loading a new lesson
-    setCardQueue([]);
-
-    const nextCard = getNextCardFromQueue(updatedCards);
+    const nextCard = getNextCard(updatedCards);
     if (nextCard) {
       // If it's a new card, introduce it
       if (nextCard.boxNumber === -1) {
@@ -108,7 +63,7 @@ function App() {
         setCurrentCard(nextCard);
       }
     }
-  }, [cards, injectedLessons, getNextCardFromQueue]);
+  }, [cards, injectedLessons]);
 
   // Initialize with first lesson on mount
   useEffect(() => {
@@ -118,7 +73,7 @@ function App() {
 
     if (savedCards && savedCards.length > 0) {
       setCards(savedCards);
-      const nextCard = getNextCardFromQueue(savedCards);
+      const nextCard = getNextCard(savedCards);
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
           const introduced = introduceCard(nextCard);
@@ -141,7 +96,7 @@ function App() {
     return () => {
       detector.stop();
     };
-  }, [detector, loadLesson, getNextCardFromQueue]);
+  }, [detector, loadLesson]);
 
   // Start listening for piano input
   const startListening = async () => {
@@ -219,10 +174,10 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessons);
 
-    // Get next card from queue
+    // Get next card
     setTimeout(() => {
       setDetectedNote(null);
-      const nextCard = getNextCardFromQueue(updatedCards);
+      const nextCard = getNextCard(updatedCards);
 
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
@@ -240,7 +195,7 @@ function App() {
         setCurrentCard(null);
       }
     }, 1000);
-  }, [currentCard, cards, settings, injectedLessons, getNextCardFromQueue]);
+  }, [currentCard, cards, settings, injectedLessons]);
 
   // Handle incorrect answer
   const handleIncorrect = useCallback(() => {
@@ -251,10 +206,10 @@ function App() {
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessons);
 
-    // Get next card from queue
+    // Get next card
     setTimeout(() => {
       setDetectedNote(null);
-      const nextCard = getNextCardFromQueue(updatedCards);
+      const nextCard = getNextCard(updatedCards);
 
       if (nextCard) {
         if (nextCard.boxNumber === -1) {
@@ -272,7 +227,7 @@ function App() {
         setCurrentCard(null);
       }
     }, 1500);
-  }, [currentCard, cards, settings, injectedLessons, getNextCardFromQueue]);
+  }, [currentCard, cards, settings, injectedLessons]);
 
   // Reset progress
   const resetProgress = () => {
@@ -280,7 +235,6 @@ function App() {
       setCards([]);
       setCurrentCard(null);
       setInjectedLessons([]);
-      setCardQueue([]);
       saveProgress([]);
       saveInjectedLessons([]);
     }
