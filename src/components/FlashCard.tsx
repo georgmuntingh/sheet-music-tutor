@@ -9,6 +9,7 @@ interface FlashCardProps {
   onIncorrect: () => void;
   isListening: boolean;
   detectedNote: string | null;
+  isPaused: boolean;
 }
 
 export const FlashCard: React.FC<FlashCardProps> = ({
@@ -17,6 +18,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   onIncorrect,
   isListening,
   detectedNote,
+  isPaused,
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
@@ -36,7 +38,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
   // Handle note detection with delay
   useEffect(() => {
-    if (!isListening || feedback) {
+    if (!isListening || feedback || isPaused) {
+      // Clear any pending timer when paused
+      if (isPaused && detectionTimer) {
+        clearTimeout(detectionTimer);
+        setDetectionTimer(null);
+        setStableNote(null);
+      }
       return;
     }
 
@@ -110,7 +118,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         setStableNote(null);
       }
     }
-  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote]);
+  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused]);
 
   return (
     <div className={`flash-card ${feedback || ''}`}>
@@ -134,7 +142,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           <div className="instruction">Click "Start Listening" to begin</div>
         )}
 
-        {isListening && !feedback && (
+        {isListening && isPaused && (
+          <div className="instruction paused">
+            Paused - Click "Continue" to resume
+          </div>
+        )}
+
+        {isListening && !isPaused && !feedback && (
           <div className="instruction listening">
             Play the note shown above on your piano...
           </div>

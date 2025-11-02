@@ -60,6 +60,11 @@
   animation: pulse 2s infinite;
 }
 
+.instruction.paused {
+  color: #ffa500;
+  font-weight: 500;
+}
+
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
