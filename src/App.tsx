@@ -22,6 +22,8 @@ function App() {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [detector] = useState(() => new PianoPitchDetector());
   const [isListening, setIsListening] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
@@ -90,11 +92,10 @@ function App() {
 
     try {
       await detector.initialize();
-      setIsListening(true);
       setIsInitializing(false);
 
-      // Start pitch detection loop
-      detectPitchLoop();
+      // Start countdown from 3
+      setCountdown(3);
     } catch (err) {
       setError('Failed to access microphone. Please allow microphone access and try again.');
       setIsInitializing(false);
@@ -102,27 +103,58 @@ function App() {
     }
   };
 
+  // Countdown effect
+  useEffect(() => {
+    if (countdown === null) return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Countdown finished, start listening
+      setCountdown(null);
+      setIsListening(true);
+      setIsPaused(false);
+      detectPitchLoop();
+    }
+  }, [countdown]);
+
   // Stop listening
   const stopListening = () => {
     detector.stop();
     setIsListening(false);
+    setIsPaused(false);
+    setCountdown(null);
     setDetectedNote(null);
+  };
+
+  // Pause listening
+  const pauseListening = () => {
+    setIsPaused(true);
+  };
+
+  // Continue listening
+  const continueListening = () => {
+    setIsPaused(false);
+    detectPitchLoop();
   };
 
   // Pitch detection loop
   const detectPitchLoop = useCallback(async () => {
-    if (!detector.getIsRunning()) return;
+    if (!detector.getIsRunning() || isPaused) return;
 
     const note = await detector.detectPitchStable(300, 2);
     if (note) {
       setDetectedNote(`${note.name}${note.octave}`);
     }
 
-    // Continue detection if still listening
-    if (detector.getIsRunning()) {
+    // Continue detection if still listening and not paused
+    if (detector.getIsRunning() && !isPaused) {
       setTimeout(detectPitchLoop, 100);
     }
-  }, [detector]);
+  }, [detector, isPaused]);
 
   // Handle correct answer
   const handleCorrect = useCallback(() => {
@@ -240,7 +272,7 @@ function App() {
         )}
 
         <div className="controls">
-          {!isListening && !isInitializing && (
+          {!isListening && !isInitializing && countdown === null && (
             <button onClick={startListening} className="primary-button">
               🎤 Start Listening
             </button>
@@ -252,10 +284,32 @@ function App() {
             </button>
           )}
 
-          {isListening && (
-            <button onClick={stopListening} className="danger-button">
-              ⏹ Stop Listening
+          {countdown !== null && (
+            <button disabled className="primary-button">
+              Get ready... {countdown}
             </button>
+          )}
+
+          {isListening && !isPaused && (
+            <>
+              <button onClick={pauseListening} className="warning-button">
+                ⏸ Pause
+              </button>
+              <button onClick={stopListening} className="danger-button">
+                ⏹ Stop Listening
+              </button>
+            </>
+          )}
+
+          {isListening && isPaused && (
+            <>
+              <button onClick={continueListening} className="primary-button">
+                ▶️ Continue
+              </button>
+              <button onClick={stopListening} className="danger-button">
+                ⏹ Stop Listening
+              </button>
+            </>
           )}
 
           <button
