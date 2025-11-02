@@ -60,8 +60,10 @@ export const getNextCard = (cards: FlashCard[]): FlashCard | null => {
   const dueCards = getDueCards(cards);
 
   if (dueCards.length > 0) {
-    // Return a random due card to add variety
-    return dueCards[Math.floor(Math.random() * dueCards.length)];
+    // Return the first due card (FIFO - First In First Out)
+    // Sort by nextReviewDate to get the oldest due card first
+    dueCards.sort((a, b) => a.nextReviewDate - b.nextReviewDate);
+    return dueCards[0];
   }
 
   // If no due cards, introduce a new card
