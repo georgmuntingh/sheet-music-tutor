@@ -38,7 +38,6 @@ export interface LearningProgress {
   totalReviews: number;
   correctReviews: number;
   currentLessonId?: string;
-  injectedLessons?: string[]; // Track which lessons have been injected
 }
 
 // Settings for rehearsal intervals (in milliseconds)
@@ -48,7 +47,4 @@ export interface RehearsalSettings {
   box2Interval: number; // Box 2
   box3Interval: number; // Box 3
   box4Interval: number; // Box 4
-  countdownDuration: number; // Countdown before starting (default 5000ms)
-  timeoutLength: number; // Timeout for answering a card (default 2000ms)
-  feedbackLength: number; // Feedback display duration (default 2000ms)
 }

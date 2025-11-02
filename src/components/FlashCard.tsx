@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FlashCard as FlashCardType, RehearsalSettings } from '../types';
+import { FlashCard as FlashCardType } from '../types';
 import { MusicNotation } from './MusicNotation';
 import './FlashCard.css';
 
@@ -9,7 +9,6 @@ interface FlashCardProps {
   onIncorrect: () => void;
   isListening: boolean;
   detectedNote: string | null;
-  settings: RehearsalSettings;
 }
 
 export const FlashCard: React.FC<FlashCardProps> = ({
@@ -18,51 +17,22 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   onIncorrect,
   isListening,
   detectedNote,
-  settings,
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
   const [detectionTimer, setDetectionTimer] = useState<number | null>(null);
   const [stableNote, setStableNote] = useState<string | null>(null);
-  const [timeoutTimer, setTimeoutTimer] = useState<number | null>(null);
 
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
-  // Clear timers when component unmounts or card changes
+  // Clear detection timer when component unmounts or card changes
   useEffect(() => {
     return () => {
       if (detectionTimer) {
         clearTimeout(detectionTimer);
       }
-      if (timeoutTimer) {
-        clearTimeout(timeoutTimer);
-      }
     };
-  }, [detectionTimer, timeoutTimer, card.id]);
-
-  // Start timeout timer when listening begins
-  useEffect(() => {
-    if (isListening && !feedback && !timeoutTimer) {
-      const timer = setTimeout(() => {
-        // Timeout - mark as incorrect
-        setFeedback('incorrect');
-        setTimeout(() => {
-          onIncorrect();
-          setFeedback(null);
-          setShowNote(false);
-          setStableNote(null);
-        }, settings.feedbackLength);
-      }, settings.timeoutLength);
-
-      setTimeoutTimer(timer);
-    }
-
-    // Clear timeout if listening stops
-    if (!isListening && timeoutTimer) {
-      clearTimeout(timeoutTimer);
-      setTimeoutTimer(null);
-    }
-  }, [isListening, feedback, timeoutTimer, onIncorrect, settings.timeoutLength, settings.feedbackLength]);
+  }, [detectionTimer, card.id]);
 
   // Handle note detection with delay
   useEffect(() => {
@@ -83,18 +53,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           const timer = setTimeout(() => {
             // After 500ms, make the judgment
             if (detectedNote === expectedNote) {
-              // Clear the timeout timer on correct answer
-              if (timeoutTimer) {
-                clearTimeout(timeoutTimer);
-                setTimeoutTimer(null);
-              }
               setFeedback('correct');
               setTimeout(() => {
                 onCorrect();
                 setFeedback(null);
                 setShowNote(false);
                 setStableNote(null);
-              }, settings.feedbackLength);
+              }, 1000);
             } else {
               setFeedback('incorrect');
               setTimeout(() => {
@@ -102,7 +67,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
                 setFeedback(null);
                 setShowNote(false);
                 setStableNote(null);
-              }, settings.feedbackLength);
+              }, 1500);
             }
             setDetectionTimer(null);
           }, 500); // 0.5 second delay before judgment
@@ -116,18 +81,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         const timer = setTimeout(() => {
           // After 500ms, make the judgment
           if (detectedNote === expectedNote) {
-            // Clear the timeout timer on correct answer
-            if (timeoutTimer) {
-              clearTimeout(timeoutTimer);
-              setTimeoutTimer(null);
-            }
             setFeedback('correct');
             setTimeout(() => {
               onCorrect();
               setFeedback(null);
               setShowNote(false);
               setStableNote(null);
-            }, settings.feedbackLength);
+            }, 1000);
           } else {
             setFeedback('incorrect');
             setTimeout(() => {
@@ -135,7 +95,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               setFeedback(null);
               setShowNote(false);
               setStableNote(null);
-            }, settings.feedbackLength);
+            }, 1500);
           }
           setDetectionTimer(null);
         }, 500); // 0.5 second delay before judgment
@@ -150,7 +110,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         setStableNote(null);
       }
     }
-  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, timeoutTimer, settings.feedbackLength]);
+  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote]);
 
   return (
     <div className={`flash-card ${feedback || ''}`}>
