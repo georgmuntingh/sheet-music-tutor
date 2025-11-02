@@ -31,6 +31,16 @@ function App() {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
+  // Shuffle array using Fisher-Yates algorithm
+  const shuffleArray = <T,>(array: T[]): T[] => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   // Inject lesson into stack (adds cards to existing stack)
   const injectLesson = useCallback((lesson: Lesson) => {
     // Don't inject if already injected
@@ -38,7 +48,9 @@ function App() {
       return;
     }
 
-    const newCards = initializeFlashCards(lesson.notes);
+    // Shuffle notes before creating flash cards for random injection order
+    const shuffledNotes = shuffleArray(lesson.notes);
+    const newCards = initializeFlashCards(shuffledNotes);
     const updatedCards = [...cards, ...newCards];
     const updatedInjectedIds = [...injectedLessonIds, lesson.id];
 
