@@ -23,7 +23,19 @@ export const generateNoteSet = (): Note[] => {
 // A4 = 440 Hz
 export const getFrequency = (noteName: string, octave: number): number => {
   const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const noteIndex = noteNames.indexOf(noteName);
+
+  // Map flat notes to their sharp equivalents for frequency calculation
+  const flatToSharpMap: { [key: string]: string } = {
+    'Db': 'C#',
+    'Eb': 'D#',
+    'Gb': 'F#',
+    'Ab': 'G#',
+    'Bb': 'A#',
+  };
+
+  // Convert flats to sharps for consistent frequency calculation
+  const normalizedNoteName = flatToSharpMap[noteName] || noteName;
+  const noteIndex = noteNames.indexOf(normalizedNoteName);
 
   if (noteIndex === -1) {
     throw new Error(`Invalid note name: ${noteName}`);
