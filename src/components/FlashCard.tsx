@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FlashCard as FlashCardType } from '../types';
 import { MusicNotation } from './MusicNotation';
+import { areNotesEquivalent } from '../utils/noteUtils';
 import './FlashCard.css';
 
 interface FlashCardProps {
@@ -68,7 +69,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           // Start a new timer for the new note
           const timer = setTimeout(() => {
             // After 500ms, make the judgment
-            if (detectedNote === expectedNote) {
+            if (areNotesEquivalent(detectedNote, expectedNote)) {
               setFeedback('correct');
               setHasAnswered(true);
               setTimeout(() => {
@@ -92,7 +93,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         setStableNote(detectedNote);
         const timer = setTimeout(() => {
           // After 500ms, make the judgment
-          if (detectedNote === expectedNote) {
+          if (areNotesEquivalent(detectedNote, expectedNote)) {
             setFeedback('correct');
             setHasAnswered(true);
             setTimeout(() => {

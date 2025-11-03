@@ -67,6 +67,36 @@
   gap: 1rem;
 }
 
+.lesson-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lesson-grid-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.lesson-grid-cell.header {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #667eea;
+  padding: 0.5rem;
+  background: #f8f9ff;
+  border-radius: 6px;
+  border: 2px solid #667eea;
+}
+
+.lesson-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
 .lesson-button {
   background: white;
   border: 2px solid #e0e0e0;
@@ -364,5 +394,11 @@
   .countdown-display {
     background: #1a1a1a;
     border: 1px solid #333;
+  }
+
+  .lesson-grid-cell.header {
+    background: #2a2a3a;
+    border-color: #667eea;
+    color: #667eea;
   }
 }

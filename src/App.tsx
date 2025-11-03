@@ -389,22 +389,62 @@ function App() {
                 ? "Get started by selecting your first lesson!"
                 : "All cards reviewed! Choose another lesson to continue learning."}
             </p>
-            <div className="lesson-buttons">
-              {LESSONS.map((lesson) => {
-                const isInjected = injectedLessonIds.includes(lesson.id);
-                return (
-                  <button
-                    key={lesson.id}
-                    onClick={() => injectLesson(lesson)}
-                    disabled={isInjected}
-                    className={isInjected ? 'lesson-button injected' : 'lesson-button'}
-                  >
-                    <strong>{lesson.name}</strong>
-                    <span className="lesson-description">{lesson.description}</span>
-                    {isInjected && <span className="injected-badge">✓ Injected</span>}
-                  </button>
-                );
-              })}
+            <div className="lesson-grid">
+              <div className="lesson-grid-header">
+                <div className="lesson-grid-cell header">Natural Notes</div>
+                <div className="lesson-grid-cell header">Sharps & Flats</div>
+              </div>
+              <div className="lesson-grid-row">
+                {[LESSONS[0], LESSONS[3]].map((lesson) => {
+                  const isInjected = injectedLessonIds.includes(lesson.id);
+                  return (
+                    <button
+                      key={lesson.id}
+                      onClick={() => injectLesson(lesson)}
+                      disabled={isInjected}
+                      className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                    >
+                      <strong>{lesson.name}</strong>
+                      <span className="lesson-description">{lesson.description}</span>
+                      {isInjected && <span className="injected-badge">✓ Injected</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="lesson-grid-row">
+                {[LESSONS[1], LESSONS[4]].map((lesson) => {
+                  const isInjected = injectedLessonIds.includes(lesson.id);
+                  return (
+                    <button
+                      key={lesson.id}
+                      onClick={() => injectLesson(lesson)}
+                      disabled={isInjected}
+                      className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                    >
+                      <strong>{lesson.name}</strong>
+                      <span className="lesson-description">{lesson.description}</span>
+                      {isInjected && <span className="injected-badge">✓ Injected</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="lesson-grid-row">
+                {[LESSONS[2], LESSONS[5]].map((lesson) => {
+                  const isInjected = injectedLessonIds.includes(lesson.id);
+                  return (
+                    <button
+                      key={lesson.id}
+                      onClick={() => injectLesson(lesson)}
+                      disabled={isInjected}
+                      className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                    >
+                      <strong>{lesson.name}</strong>
+                      <span className="lesson-description">{lesson.description}</span>
+                      {isInjected && <span className="injected-badge">✓ Injected</span>}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
