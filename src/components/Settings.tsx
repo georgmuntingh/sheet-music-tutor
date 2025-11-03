@@ -4,17 +4,18 @@ import { loadSettings, saveSettings, resetSettings, DEFAULT_SETTINGS, formatInte
 import './Settings.css';
 
 interface SettingsProps {
+  userId?: string;
   onClose: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
-  const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
+export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
+  const [settings, setSettings] = useState<RehearsalSettings>(loadSettings(userId));
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Load settings on mount
+  // Load settings on mount or when userId changes
   useEffect(() => {
-    setSettings(loadSettings());
-  }, []);
+    setSettings(loadSettings(userId));
+  }, [userId]);
 
   const handleIntervalChange = (box: keyof RehearsalSettings, value: string) => {
     const numValue = parseFloat(value);
@@ -28,14 +29,14 @@ export const Settings: React.FC<SettingsProps> = ({ onClose }) => {
   };
 
   const handleSave = () => {
-    saveSettings(settings);
+    saveSettings(settings, userId);
     setHasChanges(false);
     alert('Settings saved successfully!');
   };
 
   const handleReset = () => {
     if (confirm('Are you sure you want to reset all settings to defaults?')) {
-      const defaults = resetSettings();
+      const defaults = resetSettings(userId);
       setSettings(defaults);
       setHasChanges(false);
     }

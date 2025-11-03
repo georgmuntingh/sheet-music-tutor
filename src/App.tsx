@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlashCard as FlashCardType, Lesson, RehearsalSettings } from './types';
+import { FlashCard as FlashCardType, Lesson, RehearsalSettings, UserProfile } from './types';
 import { FlashCard } from './components/FlashCard';
 import { ProgressDisplay } from './components/ProgressDisplay';
 import { Settings } from './components/Settings';
+import UserProfileComponent from './components/UserProfile';
 import { PianoPitchDetector } from './utils/pitchDetection';
 import {
   initializeFlashCards,
@@ -13,10 +14,24 @@ import {
 } from './utils/leitnerSystem';
 import { saveProgress, loadProgress } from './utils/storage';
 import { loadSettings } from './utils/settingsStorage';
+import {
+  initializeDefaultProfiles,
+  getUserProfiles,
+  getCurrentUserId,
+  setCurrentUserId,
+  getUserProfile,
+  createUserProfile,
+  deleteUserProfile,
+} from './utils/userStorage';
 import { LESSONS } from './utils/lessons';
 import './App.css';
 
 function App() {
+  // User profile state
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
+
+  // Learning state
   const [cards, setCards] = useState<FlashCardType[]>([]);
   const [currentCard, setCurrentCard] = useState<FlashCardType | null>(null);
   const [injectedLessonIds, setInjectedLessonIds] = useState<string[]>([]);
@@ -43,6 +58,8 @@ function App() {
 
   // Inject lesson into stack (adds cards to existing stack)
   const injectLesson = useCallback((lesson: Lesson) => {
+    if (!currentUser) return;
+
     // Don't inject if already injected
     if (injectedLessonIds.includes(lesson.id)) {
       return;
@@ -56,7 +73,7 @@ function App() {
 
     setCards(updatedCards);
     setInjectedLessonIds(updatedInjectedIds);
-    saveProgress(updatedCards, updatedInjectedIds);
+    saveProgress(updatedCards, updatedInjectedIds, currentUser.id);
 
     const nextCard = getNextCard(updatedCards);
     if (nextCard) {
@@ -68,16 +85,50 @@ function App() {
         );
         setCards(cardsWithIntroduced);
         setCurrentCard(introduced);
-        saveProgress(cardsWithIntroduced, updatedInjectedIds);
+        saveProgress(cardsWithIntroduced, updatedInjectedIds, currentUser.id);
       } else {
         setCurrentCard(nextCard);
       }
     }
-  }, [cards, injectedLessonIds]);
+  }, [cards, injectedLessonIds, currentUser]);
 
-  // Initialize on mount
+  // Initialize user profiles on mount
   useEffect(() => {
-    const savedProgress = loadProgress();
+    const profiles = initializeDefaultProfiles();
+    setAllUsers(profiles);
+
+    const currentUserId = getCurrentUserId();
+    if (currentUserId) {
+      const user = getUserProfile(currentUserId);
+      if (user) {
+        setCurrentUser(user);
+      } else if (profiles.length > 0) {
+        // Fallback to first profile if saved user not found
+        setCurrentUser(profiles[0]);
+        setCurrentUserId(profiles[0].id);
+      }
+    } else if (profiles.length > 0) {
+      // No current user, set first profile as default
+      setCurrentUser(profiles[0]);
+      setCurrentUserId(profiles[0].id);
+    }
+
+    // Cleanup detector on unmount
+    return () => {
+      detector.stop();
+    };
+  }, [detector]);
+
+  // Load user-specific data when current user changes
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Load user-specific settings
+    const userSettings = loadSettings(currentUser.id);
+    setSettings(userSettings);
+
+    // Load user-specific progress
+    const savedProgress = loadProgress(currentUser.id);
     if (savedProgress && savedProgress.cards.length > 0) {
       setCards(savedProgress.cards);
       setInjectedLessonIds(savedProgress.injectedLessonIds || []);
@@ -91,7 +142,7 @@ function App() {
           );
           setCards(updatedCards);
           setCurrentCard(introduced);
-          saveProgress(updatedCards, savedProgress.injectedLessonIds || []);
+          saveProgress(updatedCards, savedProgress.injectedLessonIds || [], currentUser.id);
         } else {
           setCurrentCard(nextCard);
         }
@@ -102,12 +153,7 @@ function App() {
       setInjectedLessonIds([]);
       setCurrentCard(null);
     }
-
-    // Cleanup detector on unmount
-    return () => {
-      detector.stop();
-    };
-  }, [detector]);
+  }, [currentUser]);
 
   // Start countdown before listening
   const startListening = () => {
@@ -179,12 +225,12 @@ function App() {
 
   // Handle correct answer
   const handleCorrect = useCallback(() => {
-    if (!currentCard) return;
+    if (!currentCard || !currentUser) return;
 
     const promoted = promoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards, injectedLessonIds);
+    saveProgress(updatedCards, injectedLessonIds, currentUser.id);
 
     // Get next card immediately (FlashCard.tsx handles visual delay)
     setDetectedNote(null);
@@ -198,23 +244,23 @@ function App() {
         );
         setCards(cardsWithIntroduced);
         setCurrentCard(introduced);
-        saveProgress(cardsWithIntroduced, injectedLessonIds);
+        saveProgress(cardsWithIntroduced, injectedLessonIds, currentUser.id);
       } else {
         setCurrentCard(nextCard);
       }
     } else {
       setCurrentCard(null);
     }
-  }, [currentCard, cards, settings, injectedLessonIds]);
+  }, [currentCard, cards, settings, injectedLessonIds, currentUser]);
 
   // Handle incorrect answer
   const handleIncorrect = useCallback(() => {
-    if (!currentCard) return;
+    if (!currentCard || !currentUser) return;
 
     const demoted = demoteCard(currentCard, settings);
     const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
     setCards(updatedCards);
-    saveProgress(updatedCards, injectedLessonIds);
+    saveProgress(updatedCards, injectedLessonIds, currentUser.id);
 
     // Get next card immediately (FlashCard.tsx handles visual delay)
     setDetectedNote(null);
@@ -228,17 +274,19 @@ function App() {
         );
         setCards(cardsWithIntroduced);
         setCurrentCard(introduced);
-        saveProgress(cardsWithIntroduced, injectedLessonIds);
+        saveProgress(cardsWithIntroduced, injectedLessonIds, currentUser.id);
       } else {
         setCurrentCard(nextCard);
       }
     } else {
       setCurrentCard(null);
     }
-  }, [currentCard, cards, settings, injectedLessonIds]);
+  }, [currentCard, cards, settings, injectedLessonIds, currentUser]);
 
   // Handle manual next card (for backup button)
   const handleNextCard = useCallback(() => {
+    if (!currentUser) return;
+
     setDetectedNote(null);
     const nextCard = getNextCard(cards);
 
@@ -250,30 +298,80 @@ function App() {
         );
         setCards(updatedCards);
         setCurrentCard(introduced);
-        saveProgress(updatedCards, injectedLessonIds);
+        saveProgress(updatedCards, injectedLessonIds, currentUser.id);
       } else {
         setCurrentCard(nextCard);
       }
     } else {
       setCurrentCard(null);
     }
-  }, [cards, injectedLessonIds]);
+  }, [cards, injectedLessonIds, currentUser]);
 
   // Reset progress
   const resetProgress = () => {
-    if (confirm('Are you sure you want to reset all progress?')) {
+    if (!currentUser) return;
+
+    if (confirm('Are you sure you want to reset all progress for this user?')) {
       setCards([]);
       setInjectedLessonIds([]);
       setCurrentCard(null);
-      saveProgress([], []);
+      saveProgress([], [], currentUser.id);
+    }
+  };
+
+  // Handle user profile changes
+  const handleUserChange = (userId: string) => {
+    const user = getUserProfile(userId);
+    if (user) {
+      // Stop listening when switching users
+      if (isListening) {
+        stopListening();
+      }
+
+      setCurrentUser(user);
+      setCurrentUserId(userId);
+    }
+  };
+
+  const handleCreateUser = (name: string) => {
+    createUserProfile(name);
+    setAllUsers(getUserProfiles());
+    // Don't auto-switch to new user, keep current user active
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (allUsers.length <= 1) {
+      alert('Cannot delete the last user profile!');
+      return;
+    }
+
+    deleteUserProfile(userId);
+    const remainingUsers = getUserProfiles();
+    setAllUsers(remainingUsers);
+
+    // If we deleted the current user, switch to first remaining user
+    if (currentUser?.id === userId && remainingUsers.length > 0) {
+      setCurrentUser(remainingUsers[0]);
+      setCurrentUserId(remainingUsers[0].id);
     }
   };
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>🎹 Piano Sheet Music Tutor</h1>
-        <p className="subtitle">Learn to read piano sheet music with spaced repetition</p>
+        <div className="header-content">
+          <div>
+            <h1>🎹 Piano Sheet Music Tutor</h1>
+            <p className="subtitle">Learn to read piano sheet music with spaced repetition</p>
+          </div>
+          <UserProfileComponent
+            currentUser={currentUser}
+            allUsers={allUsers}
+            onUserChange={handleUserChange}
+            onCreateUser={handleCreateUser}
+            onDeleteUser={handleDeleteUser}
+          />
+        </div>
       </header>
 
       <main className="app-main">
@@ -359,10 +457,13 @@ function App() {
         </div>
 
         {showProgress && <ProgressDisplay cards={cards} />}
-        {showSettings && <Settings onClose={() => {
-          setShowSettings(false);
-          setSettings(loadSettings());
-        }} />}
+        {showSettings && currentUser && <Settings
+          userId={currentUser.id}
+          onClose={() => {
+            setShowSettings(false);
+            setSettings(loadSettings(currentUser.id));
+          }}
+        />}
 
         {currentCard && (
           <FlashCard

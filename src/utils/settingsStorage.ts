@@ -11,17 +11,24 @@ export const DEFAULT_SETTINGS: RehearsalSettings = {
   box4Interval: 7 * 24 * 60 * 60 * 1000, // Box 4: 1 week
 };
 
-export const saveSettings = (settings: RehearsalSettings): void => {
+/**
+ * Get the storage key for a specific user, or default key if no user specified
+ */
+const getStorageKey = (userId?: string): string => {
+  return userId ? `${SETTINGS_KEY}-${userId}` : SETTINGS_KEY;
+};
+
+export const saveSettings = (settings: RehearsalSettings, userId?: string): void => {
   try {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(settings));
   } catch (error) {
     console.error('Failed to save settings:', error);
   }
 };
 
-export const loadSettings = (): RehearsalSettings => {
+export const loadSettings = (userId?: string): RehearsalSettings => {
   try {
-    const stored = localStorage.getItem(SETTINGS_KEY);
+    const stored = localStorage.getItem(getStorageKey(userId));
     if (stored) {
       return JSON.parse(stored);
     }
@@ -31,8 +38,8 @@ export const loadSettings = (): RehearsalSettings => {
   return DEFAULT_SETTINGS;
 };
 
-export const resetSettings = (): RehearsalSettings => {
-  saveSettings(DEFAULT_SETTINGS);
+export const resetSettings = (userId?: string): RehearsalSettings => {
+  saveSettings(DEFAULT_SETTINGS, userId);
   return DEFAULT_SETTINGS;
 };
 

@@ -49,3 +49,10 @@ export interface RehearsalSettings {
   box3Interval: number; // Box 3
   box4Interval: number; // Box 4
 }
+
+// User profile representation
+export interface UserProfile {
+  id: string; // Unique identifier for the user
+  name: string; // Display name (e.g., "Ella", "Georg")
+  createdAt: number; // Timestamp when profile was created
+}

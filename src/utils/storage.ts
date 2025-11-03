@@ -2,7 +2,14 @@ import { FlashCard, LearningProgress } from '../types';
 
 const STORAGE_KEY = 'piano-tutor-progress';
 
-export const saveProgress = (cards: FlashCard[], injectedLessonIds: string[] = []): void => {
+/**
+ * Get the storage key for a specific user, or default key if no user specified
+ */
+const getStorageKey = (userId?: string): string => {
+  return userId ? `${STORAGE_KEY}-${userId}` : STORAGE_KEY;
+};
+
+export const saveProgress = (cards: FlashCard[], injectedLessonIds: string[] = [], userId?: string): void => {
   try {
     const progress: LearningProgress = {
       cards,
@@ -12,15 +19,15 @@ export const saveProgress = (cards: FlashCard[], injectedLessonIds: string[] = [
       injectedLessonIds,
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(progress));
   } catch (error) {
     console.error('Failed to save progress:', error);
   }
 };
 
-export const loadProgress = (): LearningProgress | null => {
+export const loadProgress = (userId?: string): LearningProgress | null => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey(userId));
     if (!stored) return null;
 
     const progress: LearningProgress = JSON.parse(stored);
@@ -35,9 +42,9 @@ export const loadProgress = (): LearningProgress | null => {
   }
 };
 
-export const clearProgress = (): void => {
+export const clearProgress = (userId?: string): void => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey(userId));
   } catch (error) {
     console.error('Failed to clear progress:', error);
   }
