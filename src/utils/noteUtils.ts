@@ -74,3 +74,40 @@ export const getClef = (_note: Note): 'treble' | 'bass' => {
   // Always use treble clef (G-clef) for all lessons
   return 'treble';
 };
+
+// Compare two note strings considering enharmonic equivalents
+// Returns true if the notes are the same pitch (e.g., C#4 and Db4)
+export const areNotesEquivalent = (note1: string, note2: string): boolean => {
+  // Parse note name and octave from strings like "C#4" or "Db5"
+  const parseNote = (noteStr: string): { name: string; octave: string } => {
+    const match = noteStr.match(/^([A-G][#b]?)(\d+)$/);
+    if (!match) {
+      throw new Error(`Invalid note format: ${noteStr}`);
+    }
+    return { name: match[1], octave: match[2] };
+  };
+
+  const parsed1 = parseNote(note1);
+  const parsed2 = parseNote(note2);
+
+  // If octaves are different, notes can't be equivalent
+  if (parsed1.octave !== parsed2.octave) {
+    return false;
+  }
+
+  // Map flat notes to their sharp equivalents
+  const flatToSharpMap: { [key: string]: string } = {
+    'Db': 'C#',
+    'Eb': 'D#',
+    'Gb': 'F#',
+    'Ab': 'G#',
+    'Bb': 'A#',
+  };
+
+  // Normalize both note names to sharps
+  const normalized1 = flatToSharpMap[parsed1.name] || parsed1.name;
+  const normalized2 = flatToSharpMap[parsed2.name] || parsed2.name;
+
+  // Compare normalized note names
+  return normalized1 === normalized2;
+};
