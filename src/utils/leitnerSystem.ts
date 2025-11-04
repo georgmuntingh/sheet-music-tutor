@@ -13,7 +13,7 @@ export const LEITNER_BOXES: LeitnerBox[] = [
 
 // Get interval in milliseconds based on settings
 const getIntervalMs = (boxNumber: number, settings?: RehearsalSettings): number => {
-  const currentSettings = settings || loadSettings();
+  const currentSettings = settings || loadSettings().rehearsal;
 
   switch (boxNumber) {
     case 0: return currentSettings.box0Interval;

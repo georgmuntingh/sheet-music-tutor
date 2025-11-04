@@ -50,6 +50,18 @@ export interface RehearsalSettings {
   box4Interval: number; // Box 4
 }
 
+// Settings for audio detection
+export interface AudioDetectionSettings {
+  enableHarmonicRatio: boolean; // Enable harmonic ratio filtering
+  harmonicRatioThreshold: number; // 0-1, minimum ratio to accept as piano sound
+}
+
+// Combined app settings
+export interface AppSettings {
+  rehearsal: RehearsalSettings;
+  audioDetection: AudioDetectionSettings;
+}
+
 // User profile representation
 export interface UserProfile {
   id: string; // Unique identifier for the user
