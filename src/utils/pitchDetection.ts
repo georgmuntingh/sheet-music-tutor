@@ -28,7 +28,7 @@ export class PianoPitchDetector {
   constructor(settings?: AudioDetectionSettings) {
     this.settings = settings || {
       enableHarmonicRatio: true,
-      harmonicRatioThreshold: 0.6,
+      harmonicRatioThreshold: 0.75,
     };
   }
 

@@ -14,7 +14,7 @@ export const DEFAULT_REHEARSAL_SETTINGS: RehearsalSettings = {
 // Default audio detection settings
 export const DEFAULT_AUDIO_SETTINGS: AudioDetectionSettings = {
   enableHarmonicRatio: true,
-  harmonicRatioThreshold: 0.6, // 60% harmonic content required
+  harmonicRatioThreshold: 0.75, // 75% harmonic content required
 };
 
 // Combined default settings
