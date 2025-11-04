@@ -1,15 +1,30 @@
-import { RehearsalSettings } from '../types';
+import { RehearsalSettings, AudioDetectionSettings, AppSettings } from '../types';
 
 const SETTINGS_KEY = 'piano-tutor-settings';
 
 // Default rehearsal intervals (in milliseconds)
-export const DEFAULT_SETTINGS: RehearsalSettings = {
+export const DEFAULT_REHEARSAL_SETTINGS: RehearsalSettings = {
   box0Interval: 1000,           // Box 0: 1 second
   box1Interval: 60 * 1000,      // Box 1: 1 minute
   box2Interval: 60 * 60 * 1000, // Box 2: 1 hour
   box3Interval: 24 * 60 * 60 * 1000, // Box 3: 1 day
   box4Interval: 7 * 24 * 60 * 60 * 1000, // Box 4: 1 week
 };
+
+// Default audio detection settings
+export const DEFAULT_AUDIO_SETTINGS: AudioDetectionSettings = {
+  enableHarmonicRatio: true,
+  harmonicRatioThreshold: 0.75, // 75% harmonic content required
+};
+
+// Combined default settings
+export const DEFAULT_SETTINGS: AppSettings = {
+  rehearsal: DEFAULT_REHEARSAL_SETTINGS,
+  audioDetection: DEFAULT_AUDIO_SETTINGS,
+};
+
+// Legacy export for backward compatibility
+export { DEFAULT_REHEARSAL_SETTINGS as DEFAULT_SETTINGS_LEGACY };
 
 /**
  * Get the storage key for a specific user, or default key if no user specified
@@ -18,7 +33,10 @@ const getStorageKey = (userId?: string): string => {
   return userId ? `${SETTINGS_KEY}-${userId}` : SETTINGS_KEY;
 };
 
-export const saveSettings = (settings: RehearsalSettings, userId?: string): void => {
+/**
+ * Save app settings to localStorage
+ */
+export const saveSettings = (settings: AppSettings, userId?: string): void => {
   try {
     localStorage.setItem(getStorageKey(userId), JSON.stringify(settings));
   } catch (error) {
@@ -26,11 +44,30 @@ export const saveSettings = (settings: RehearsalSettings, userId?: string): void
   }
 };
 
-export const loadSettings = (userId?: string): RehearsalSettings => {
+/**
+ * Load app settings from localStorage
+ * Handles migration from old RehearsalSettings-only format
+ */
+export const loadSettings = (userId?: string): AppSettings => {
   try {
     const stored = localStorage.getItem(getStorageKey(userId));
     if (stored) {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+
+      // Check if this is the old format (direct RehearsalSettings)
+      if (parsed.box0Interval !== undefined && parsed.rehearsal === undefined) {
+        // Migrate from old format
+        return {
+          rehearsal: parsed as RehearsalSettings,
+          audioDetection: DEFAULT_AUDIO_SETTINGS,
+        };
+      }
+
+      // New format - ensure all fields are present
+      return {
+        rehearsal: parsed.rehearsal || DEFAULT_REHEARSAL_SETTINGS,
+        audioDetection: parsed.audioDetection || DEFAULT_AUDIO_SETTINGS,
+      };
     }
   } catch (error) {
     console.error('Failed to load settings:', error);
@@ -38,9 +75,33 @@ export const loadSettings = (userId?: string): RehearsalSettings => {
   return DEFAULT_SETTINGS;
 };
 
-export const resetSettings = (userId?: string): RehearsalSettings => {
+/**
+ * Reset settings to defaults
+ */
+export const resetSettings = (userId?: string): AppSettings => {
   saveSettings(DEFAULT_SETTINGS, userId);
   return DEFAULT_SETTINGS;
+};
+
+/**
+ * Legacy function for backward compatibility with existing Settings component
+ * @deprecated Use loadSettings instead
+ */
+export const loadRehearsalSettings = (userId?: string): RehearsalSettings => {
+  const settings = loadSettings(userId);
+  return settings.rehearsal;
+};
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use saveSettings instead
+ */
+export const saveRehearsalSettings = (settings: RehearsalSettings, userId?: string): void => {
+  const currentSettings = loadSettings(userId);
+  saveSettings({
+    ...currentSettings,
+    rehearsal: settings,
+  }, userId);
 };
 
 // Convert milliseconds to human-readable format

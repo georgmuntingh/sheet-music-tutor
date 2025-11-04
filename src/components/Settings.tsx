@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
-import { RehearsalSettings } from '../types';
+import { AppSettings, RehearsalSettings } from '../types';
 import { loadSettings, saveSettings, resetSettings, DEFAULT_SETTINGS, formatInterval } from '../utils/settingsStorage';
 import './Settings.css';
 
 interface SettingsProps {
   userId?: string;
   onClose: () => void;
+  onSettingsChange?: (settings: AppSettings) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
-  const [settings, setSettings] = useState<RehearsalSettings>(loadSettings(userId));
+export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsChange }) => {
+  const [settings, setSettings] = useState<AppSettings>(loadSettings(userId));
   const [hasChanges, setHasChanges] = useState(false);
 
   // Load settings on mount or when userId changes
@@ -22,15 +23,32 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
     if (!isNaN(numValue) && numValue > 0) {
       setSettings(prev => ({
         ...prev,
-        [box]: numValue,
+        rehearsal: {
+          ...prev.rehearsal,
+          [box]: numValue,
+        },
       }));
       setHasChanges(true);
     }
   };
 
+  const handleAudioSettingChange = (key: 'enableHarmonicRatio' | 'harmonicRatioThreshold', value: boolean | number) => {
+    setSettings(prev => ({
+      ...prev,
+      audioDetection: {
+        ...prev.audioDetection,
+        [key]: value,
+      },
+    }));
+    setHasChanges(true);
+  };
+
   const handleSave = () => {
     saveSettings(settings, userId);
     setHasChanges(false);
+    if (onSettingsChange) {
+      onSettingsChange(settings);
+    }
     alert('Settings saved successfully!');
   };
 
@@ -74,7 +92,7 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
             <div className="setting-item">
               <label htmlFor="box0">
                 <strong>Box 1 (New Cards)</strong>
-                <span className="interval-display">{formatInterval(settings.box0Interval)}</span>
+                <span className="interval-display">{formatInterval(settings.rehearsal.box0Interval)}</span>
               </label>
               <div className="input-group">
                 <input
@@ -82,18 +100,18 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
                   id="box0"
                   min="0.1"
                   step="0.1"
-                  value={msToSeconds(settings.box0Interval)}
+                  value={msToSeconds(settings.rehearsal.box0Interval)}
                   onChange={(e) => handleIntervalChange('box0Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
-              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.box0Interval)}</small>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.rehearsal.box0Interval)}</small>
             </div>
 
             <div className="setting-item">
               <label htmlFor="box1">
                 <strong>Box 2</strong>
-                <span className="interval-display">{formatInterval(settings.box1Interval)}</span>
+                <span className="interval-display">{formatInterval(settings.rehearsal.box1Interval)}</span>
               </label>
               <div className="input-group">
                 <input
@@ -101,18 +119,18 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
                   id="box1"
                   min="1"
                   step="1"
-                  value={msToSeconds(settings.box1Interval)}
+                  value={msToSeconds(settings.rehearsal.box1Interval)}
                   onChange={(e) => handleIntervalChange('box1Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
-              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.box1Interval)}</small>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.rehearsal.box1Interval)}</small>
             </div>
 
             <div className="setting-item">
               <label htmlFor="box2">
                 <strong>Box 3</strong>
-                <span className="interval-display">{formatInterval(settings.box2Interval)}</span>
+                <span className="interval-display">{formatInterval(settings.rehearsal.box2Interval)}</span>
               </label>
               <div className="input-group">
                 <input
@@ -120,18 +138,18 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
                   id="box2"
                   min="1"
                   step="1"
-                  value={msToSeconds(settings.box2Interval)}
+                  value={msToSeconds(settings.rehearsal.box2Interval)}
                   onChange={(e) => handleIntervalChange('box2Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
-              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.box2Interval)}</small>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.rehearsal.box2Interval)}</small>
             </div>
 
             <div className="setting-item">
               <label htmlFor="box3">
                 <strong>Box 4</strong>
-                <span className="interval-display">{formatInterval(settings.box3Interval)}</span>
+                <span className="interval-display">{formatInterval(settings.rehearsal.box3Interval)}</span>
               </label>
               <div className="input-group">
                 <input
@@ -139,18 +157,18 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
                   id="box3"
                   min="1"
                   step="1"
-                  value={msToSeconds(settings.box3Interval)}
+                  value={msToSeconds(settings.rehearsal.box3Interval)}
                   onChange={(e) => handleIntervalChange('box3Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
-              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.box3Interval)}</small>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.rehearsal.box3Interval)}</small>
             </div>
 
             <div className="setting-item">
               <label htmlFor="box4">
                 <strong>Box 5 (Mastered)</strong>
-                <span className="interval-display">{formatInterval(settings.box4Interval)}</span>
+                <span className="interval-display">{formatInterval(settings.rehearsal.box4Interval)}</span>
               </label>
               <div className="input-group">
                 <input
@@ -158,17 +176,78 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose }) => {
                   id="box4"
                   min="1"
                   step="1"
-                  value={msToSeconds(settings.box4Interval)}
+                  value={msToSeconds(settings.rehearsal.box4Interval)}
                   onChange={(e) => handleIntervalChange('box4Interval', String(secondsToMs(parseFloat(e.target.value))))}
                 />
                 <span className="unit">seconds</span>
               </div>
-              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.box4Interval)}</small>
+              <small className="default-value">Default: {formatInterval(DEFAULT_SETTINGS.rehearsal.box4Interval)}</small>
             </div>
           </div>
 
           <div className="settings-tip">
             <strong>💡 Tip:</strong> Shorter intervals help with initial learning, while longer intervals reinforce long-term memory.
+          </div>
+
+          <h3>Audio Detection</h3>
+          <p className="settings-description">
+            Configure how the app detects piano sounds and filters out background noise.
+          </p>
+
+          <div className="settings-grid">
+            <div className="setting-item">
+              <label htmlFor="enableHarmonicRatio">
+                <strong>Enable Harmonic Ratio Filtering</strong>
+              </label>
+              <div className="input-group">
+                <input
+                  type="checkbox"
+                  id="enableHarmonicRatio"
+                  checked={settings.audioDetection.enableHarmonicRatio}
+                  onChange={(e) => handleAudioSettingChange('enableHarmonicRatio', e.target.checked)}
+                />
+                <label htmlFor="enableHarmonicRatio" className="checkbox-label">
+                  Filter out non-piano sounds based on harmonic content
+                </label>
+              </div>
+              <small className="default-value">
+                Default: {DEFAULT_SETTINGS.audioDetection.enableHarmonicRatio ? 'Enabled' : 'Disabled'}
+              </small>
+            </div>
+
+            {settings.audioDetection.enableHarmonicRatio && (
+              <div className="setting-item">
+                <label htmlFor="harmonicRatioThreshold">
+                  <strong>Harmonic Ratio Threshold</strong>
+                  <span className="interval-display">
+                    {(settings.audioDetection.harmonicRatioThreshold * 100).toFixed(0)}%
+                  </span>
+                </label>
+                <div className="input-group">
+                  <input
+                    type="range"
+                    id="harmonicRatioThreshold"
+                    min="0.3"
+                    max="0.9"
+                    step="0.05"
+                    value={settings.audioDetection.harmonicRatioThreshold}
+                    onChange={(e) => handleAudioSettingChange('harmonicRatioThreshold', parseFloat(e.target.value))}
+                  />
+                  <span className="unit">{(settings.audioDetection.harmonicRatioThreshold * 100).toFixed(0)}%</span>
+                </div>
+                <small className="default-value">
+                  Default: {(DEFAULT_SETTINGS.audioDetection.harmonicRatioThreshold * 100).toFixed(0)}%
+                </small>
+                <p className="setting-help">
+                  Higher values are more strict (better at filtering background noise but may miss soft piano notes).
+                  Lower values are more permissive (detect soft notes but may react to background sounds).
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="settings-tip">
+            <strong>💡 Tip:</strong> If the app reacts to background noise (talking, other sounds), increase the harmonic ratio threshold. If it's not detecting soft piano notes, decrease it.
           </div>
         </div>
 

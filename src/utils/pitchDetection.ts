@@ -1,11 +1,12 @@
 import { PitchDetector } from 'pitchy';
-import { Note } from '../types';
+import { Note, AudioDetectionSettings } from '../types';
 import { getNoteFromFrequency } from './noteUtils';
 
 export interface PitchDetectionResult {
   frequency: number;
   clarity: number; // 0-1, how clear the pitch is
   note: Note | null;
+  harmonicRatio?: number; // 0-1, ratio of harmonic energy to total energy
 }
 
 export class PianoPitchDetector {
@@ -15,6 +16,7 @@ export class PianoPitchDetector {
   private inputBuffer: Float32Array | null = null;
   private mediaStream: MediaStream | null = null;
   private isRunning: boolean = false;
+  private settings: AudioDetectionSettings;
 
   // Piano-specific configuration
   private readonly SAMPLE_RATE = 44100;
@@ -22,6 +24,13 @@ export class PianoPitchDetector {
   private readonly CLARITY_THRESHOLD = 0.85; // High threshold for piano clarity
   private readonly MIN_FREQUENCY = 60; // ~B1, lowest piano note we care about
   private readonly MAX_FREQUENCY = 4200; // ~C8, highest piano note
+
+  constructor(settings?: AudioDetectionSettings) {
+    this.settings = settings || {
+      enableHarmonicRatio: true,
+      harmonicRatioThreshold: 0.75,
+    };
+  }
 
   async initialize(): Promise<void> {
     try {
@@ -56,6 +65,60 @@ export class PianoPitchDetector {
     }
   }
 
+  /**
+   * Calculate the ratio of harmonic energy to total energy in the spectrum.
+   * Piano sounds have strong harmonics at integer multiples of the fundamental frequency.
+   * Returns a value between 0 and 1, where higher values indicate more harmonic content.
+   */
+  private calculateHarmonicRatio(frequency: number): number {
+    if (!this.analyser) {
+      return 0;
+    }
+
+    // Get frequency spectrum from analyser
+    const spectrum = new Float32Array(this.analyser.frequencyBinCount);
+    this.analyser.getFloatFrequencyData(spectrum);
+
+    const binWidth = this.audioContext!.sampleRate / this.analyser.fftSize;
+
+    let harmonicEnergy = 0;
+    let totalEnergy = 0;
+
+    // Sum total energy across all frequencies
+    for (let i = 0; i < spectrum.length; i++) {
+      const magnitude = Math.pow(10, spectrum[i] / 20); // Convert dB to linear
+      totalEnergy += magnitude * magnitude;
+    }
+
+    // Sum energy at harmonic frequencies (1st through 8th harmonics)
+    // We check harmonics because piano sounds are rich in harmonic overtones
+    for (let harmonic = 1; harmonic <= 8; harmonic++) {
+      const harmonicFreq = frequency * harmonic;
+
+      // Skip if harmonic is beyond our detection range
+      if (harmonicFreq > this.MAX_FREQUENCY) {
+        break;
+      }
+
+      const binIndex = Math.round(harmonicFreq / binWidth);
+
+      if (binIndex < spectrum.length) {
+        // Sum energy in ±2 bins around the harmonic peak
+        // This accounts for slight frequency variations and bin resolution
+        for (let offset = -2; offset <= 2; offset++) {
+          const idx = binIndex + offset;
+          if (idx >= 0 && idx < spectrum.length) {
+            const magnitude = Math.pow(10, spectrum[idx] / 20);
+            harmonicEnergy += magnitude * magnitude;
+          }
+        }
+      }
+    }
+
+    // Return the ratio of harmonic energy to total energy
+    return totalEnergy > 0 ? harmonicEnergy / totalEnergy : 0;
+  }
+
   detectPitch(): PitchDetectionResult | null {
     if (!this.isRunning || !this.analyser || !this.detector || !this.inputBuffer) {
       return null;
@@ -81,6 +144,17 @@ export class PianoPitchDetector {
       return null;
     }
 
+    // Calculate harmonic ratio if enabled
+    let harmonicRatio: number | undefined;
+    if (this.settings.enableHarmonicRatio) {
+      harmonicRatio = this.calculateHarmonicRatio(frequency);
+
+      // Reject if harmonic ratio is below threshold (likely background noise)
+      if (harmonicRatio < this.settings.harmonicRatioThreshold) {
+        return null;
+      }
+    }
+
     // Convert frequency to note
     const note = getNoteFromFrequency(frequency, 0.4); // Slightly tighter tolerance for piano
 
@@ -88,6 +162,7 @@ export class PianoPitchDetector {
       frequency,
       clarity,
       note,
+      harmonicRatio,
     };
   }
 
@@ -160,5 +235,13 @@ export class PianoPitchDetector {
 
   getIsRunning(): boolean {
     return this.isRunning;
+  }
+
+  updateSettings(settings: AudioDetectionSettings): void {
+    this.settings = settings;
+  }
+
+  getSettings(): AudioDetectionSettings {
+    return { ...this.settings };
   }
 }

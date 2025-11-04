@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlashCard as FlashCardType, Lesson, RehearsalSettings, UserProfile } from './types';
+import { FlashCard as FlashCardType, Lesson, AppSettings, UserProfile } from './types';
 import { FlashCard } from './components/FlashCard';
 import { ProgressDisplay } from './components/ProgressDisplay';
 import { Settings } from './components/Settings';
@@ -35,14 +35,14 @@ function App() {
   const [cards, setCards] = useState<FlashCardType[]>([]);
   const [currentCard, setCurrentCard] = useState<FlashCardType | null>(null);
   const [injectedLessonIds, setInjectedLessonIds] = useState<string[]>([]);
-  const [detector] = useState(() => new PianoPitchDetector());
+  const [settings, setSettings] = useState<AppSettings>(loadSettings());
+  const [detector] = useState(() => new PianoPitchDetector(settings.audioDetection));
   const [isListening, setIsListening] = useState(false);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
-  const [settings, setSettings] = useState<RehearsalSettings>(loadSettings());
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -227,7 +227,7 @@ function App() {
   const handleCorrect = useCallback(() => {
     if (!currentCard || !currentUser) return;
 
-    const promoted = promoteCard(currentCard, settings);
+    const promoted = promoteCard(currentCard, settings.rehearsal);
     const updatedCards = cards.map(c => c.id === promoted.id ? promoted : c);
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessonIds, currentUser.id);
@@ -257,7 +257,7 @@ function App() {
   const handleIncorrect = useCallback(() => {
     if (!currentCard || !currentUser) return;
 
-    const demoted = demoteCard(currentCard, settings);
+    const demoted = demoteCard(currentCard, settings.rehearsal);
     const updatedCards = cards.map(c => c.id === demoted.id ? demoted : c);
     setCards(updatedCards);
     saveProgress(updatedCards, injectedLessonIds, currentUser.id);
@@ -354,6 +354,13 @@ function App() {
       setCurrentUser(remainingUsers[0]);
       setCurrentUserId(remainingUsers[0].id);
     }
+  };
+
+  // Handle settings changes
+  const handleSettingsChange = (newSettings: AppSettings) => {
+    setSettings(newSettings);
+    // Update detector settings in real-time
+    detector.updateSettings(newSettings.audioDetection);
   };
 
   return (
@@ -501,8 +508,11 @@ function App() {
           userId={currentUser.id}
           onClose={() => {
             setShowSettings(false);
-            setSettings(loadSettings(currentUser.id));
+            const updatedSettings = loadSettings(currentUser.id);
+            setSettings(updatedSettings);
+            detector.updateSettings(updatedSettings.audioDetection);
           }}
+          onSettingsChange={handleSettingsChange}
         />}
 
         {currentCard && (
