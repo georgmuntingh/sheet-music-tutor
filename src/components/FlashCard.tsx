@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { FlashCard as FlashCardType } from '../types';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { FlashCard as FlashCardType, Note } from '../types';
 import { MusicNotation } from './MusicNotation';
 import { areNotesEquivalent } from '../utils/noteUtils';
 import './FlashCard.css';
@@ -11,6 +11,7 @@ interface FlashCardProps {
   onNextCard: () => void;
   isListening: boolean;
   detectedNote: string | null;
+  detectedChord: Note[] | null; // For chord detection
   isPaused: boolean;
 }
 
@@ -21,19 +22,43 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   onNextCard,
   isListening,
   detectedNote,
+  detectedChord,
   isPaused,
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
   const [detectionTimer, setDetectionTimer] = useState<number | null>(null);
   const [stableNote, setStableNote] = useState<string | null>(null);
+  const [stableChord, setStableChord] = useState<Note[] | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [textInput, setTextInput] = useState('');
 
   const inputRef = useRef<HTMLInputElement>(null);
   const feedbackTimerRef = useRef<number | null>(null);
 
-  const expectedNote = `${card.note.name}${card.note.octave}`;
+  // Determine if this is a chord or single note card
+  const isChordCard = !!card.chord;
+  const expectedNote = card.note ? `${card.note.name}${card.note.octave}` : '';
+  const expectedChordName = card.chord ? card.chord.name : '';
+
+  // Helper function to check if detected chord matches expected chord
+  // Compares note names only (ignoring octaves) since a chord can be played in any octave
+  const chordMatches = useCallback((detected: Note[], expected: Note[]): boolean => {
+    if (detected.length !== expected.length) {
+      return false;
+    }
+
+    // Extract and sort note names (without octaves) for comparison
+    const detectedNames = detected.map(n => n.name).sort();
+    const expectedNames = expected.map(n => n.name).sort();
+
+    // Check if all note names match (accounting for enharmonic equivalents)
+    return detectedNames.every((name, index) => {
+      const expectedName = expectedNames[index];
+      // Use areNotesEquivalent but append a dummy octave for comparison
+      return areNotesEquivalent(`${name}4`, `${expectedName}4`);
+    });
+  }, []);
 
   // Reset state when card changes
   useEffect(() => {
@@ -41,6 +66,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setFeedback(null);
     setShowNote(false);
     setStableNote(null);
+    setStableChord(null);
     setTextInput('');
 
     return () => {
@@ -67,7 +93,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     };
   }, [card.id, feedback, hasAnswered, isPaused]);
 
-  // Handle note detection with delay
+  // Handle note/chord detection with delay
   useEffect(() => {
     if (!isListening || feedback || isPaused || hasAnswered) {
       // Clear any pending timer when paused
@@ -75,12 +101,76 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         clearTimeout(detectionTimer);
         setDetectionTimer(null);
         setStableNote(null);
+        setStableChord(null);
       }
       return;
     }
 
-    if (detectedNote) {
+    // Handle chord detection
+    if (isChordCard && detectedChord) {
+      // Create a key for the detected chord
+      const chordKey = detectedChord
+        .map(n => `${n.name}${n.octave}`)
+        .sort()
+        .join('-');
+
+      const stableChordKey = stableChord
+        ? stableChord.map(n => `${n.name}${n.octave}`).sort().join('-')
+        : null;
+
       // If we already have a timer running
+      if (detectionTimer) {
+        // If the chord changed, clear the previous timer
+        if (chordKey !== stableChordKey) {
+          clearTimeout(detectionTimer);
+          setDetectionTimer(null);
+          setStableChord(detectedChord);
+
+          // Start a new timer for the new chord
+          const timer = setTimeout(() => {
+            // After 500ms, make the judgment
+            if (card.chord && chordMatches(detectedChord, card.chord.notes)) {
+              setFeedback('correct');
+              setHasAnswered(true);
+              feedbackTimerRef.current = setTimeout(() => {
+                onCorrect();
+              }, 1000);
+            } else {
+              setFeedback('incorrect');
+              setHasAnswered(true);
+              feedbackTimerRef.current = setTimeout(() => {
+                onIncorrect();
+              }, 1500);
+            }
+            setDetectionTimer(null);
+          }, 500);
+
+          setDetectionTimer(timer);
+        }
+      } else {
+        // No timer running yet, start one
+        setStableChord(detectedChord);
+        const timer = setTimeout(() => {
+          if (card.chord && chordMatches(detectedChord, card.chord.notes)) {
+            setFeedback('correct');
+            setHasAnswered(true);
+            feedbackTimerRef.current = setTimeout(() => {
+              onCorrect();
+            }, 1000);
+          } else {
+            setFeedback('incorrect');
+            setHasAnswered(true);
+            feedbackTimerRef.current = setTimeout(() => {
+              onIncorrect();
+            }, 1500);
+          }
+          setDetectionTimer(null);
+        }, 500);
+
+        setDetectionTimer(timer);
+      }
+    } else if (!isChordCard && detectedNote) {
+      // Handle single note detection
       if (detectionTimer) {
         // If the note changed, clear the previous timer
         if (detectedNote !== stableNote) {
@@ -105,11 +195,10 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               }, 1500);
             }
             setDetectionTimer(null);
-          }, 500); // 0.5 second delay before judgment
+          }, 500);
 
           setDetectionTimer(timer);
         }
-        // If note hasn't changed, timer continues
       } else {
         // No timer running yet, start one
         setStableNote(detectedNote);
@@ -129,19 +218,20 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             }, 1500);
           }
           setDetectionTimer(null);
-        }, 500); // 0.5 second delay before judgment
+        }, 500);
 
         setDetectionTimer(timer);
       }
     } else {
-      // Note detection cleared, clear timer
+      // Detection cleared, clear timer
       if (detectionTimer) {
         clearTimeout(detectionTimer);
         setDetectionTimer(null);
         setStableNote(null);
+        setStableChord(null);
       }
     }
-  }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused, hasAnswered]);
+  }, [detectedNote, detectedChord, expectedNote, isChordCard, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, stableChord, isPaused, hasAnswered, card.chord, chordMatches]);
 
   // Handle Enter key to dismiss feedback
   useEffect(() => {
@@ -184,8 +274,17 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       setDetectionTimer(null);
     }
 
-    // Check if the text input matches the expected note
-    if (areNotesEquivalent(textInput.trim(), expectedNote)) {
+    let isCorrect = false;
+
+    if (isChordCard) {
+      // For chords, just check if the input matches the chord name (case-insensitive)
+      isCorrect = textInput.trim().toUpperCase() === expectedChordName.toUpperCase();
+    } else {
+      // For single notes, check if the input matches the expected note
+      isCorrect = areNotesEquivalent(textInput.trim(), expectedNote);
+    }
+
+    if (isCorrect) {
       setFeedback('correct');
       setHasAnswered(true);
       feedbackTimerRef.current = setTimeout(() => {
@@ -214,7 +313,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       </div>
 
       <div className="notation-container">
-        <MusicNotation note={card.note} lessonId={card.lessonId} width={400} height={200} />
+        <MusicNotation
+          note={card.note}
+          chord={card.chord}
+          lessonId={card.lessonId}
+          width={400}
+          height={200}
+        />
       </div>
 
       <div className="card-content">
@@ -230,7 +335,9 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
         {isListening && !isPaused && !feedback && (
           <div className="instruction listening">
-            Play the note shown above on your piano or type it below...
+            {isChordCard
+              ? 'Play the chord shown above on your piano or type the chord name below...'
+              : 'Play the note shown above on your piano or type it below...'}
           </div>
         )}
 
@@ -241,7 +348,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder="e.g., C4, D#5, Bb3"
+              placeholder={isChordCard ? "e.g., C, D, F#" : "e.g., C4, D#5, Bb3"}
               className="note-input"
               disabled={hasAnswered}
             />
@@ -259,15 +366,35 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
         {feedback === 'incorrect' && (
           <div className="feedback incorrect-feedback">
-            ✗ Incorrect. The correct note is {card.note.name}{card.note.octave}
-            {detectedNote && <div className="detected">You played: {detectedNote}</div>}
-            {textInput && !detectedNote && <div className="detected">You typed: {textInput}</div>}
+            {isChordCard ? (
+              <>
+                ✗ Incorrect. The correct chord is {expectedChordName} major
+                {detectedChord && (
+                  <div className="detected">
+                    You played: {detectedChord.map(n => `${n.name}${n.octave}`).join(', ')}
+                  </div>
+                )}
+                {textInput && !detectedChord && <div className="detected">You typed: {textInput}</div>}
+              </>
+            ) : (
+              <>
+                ✗ Incorrect. The correct note is {expectedNote}
+                {detectedNote && <div className="detected">You played: {detectedNote}</div>}
+                {textInput && !detectedNote && <div className="detected">You typed: {textInput}</div>}
+              </>
+            )}
           </div>
         )}
 
-        {detectedNote && isListening && !feedback && (
+        {detectedNote && isListening && !feedback && !isChordCard && (
           <div className="detected-note">
             Detected: {detectedNote}
+          </div>
+        )}
+
+        {detectedChord && isListening && !feedback && isChordCard && (
+          <div className="detected-note">
+            Detected: {detectedChord.map(n => `${n.name}${n.octave}`).join(', ')}
           </div>
         )}
       </div>
@@ -290,7 +417,9 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
       {showNote && (
         <div className="revealed-answer">
-          {card.note.name}{card.note.octave}
+          {isChordCard
+            ? `${expectedChordName} major (${card.chord!.notes.map(n => `${n.name}${n.octave}`).join(', ')})`
+            : expectedNote}
         </div>
       )}
     </div>

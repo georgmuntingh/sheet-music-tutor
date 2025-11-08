@@ -5,10 +5,18 @@ export interface Note {
   frequency: number; // Hz
 }
 
+// Chord representation (multiple notes played together)
+export interface Chord {
+  name: string; // e.g., "C", "D", "F" (root note name)
+  notes: Note[]; // Array of notes in the chord
+  type: string; // e.g., "major", "minor", "diminished"
+}
+
 // Flash card representation
 export interface FlashCard {
   id: string;
-  note: Note;
+  note?: Note; // Optional single note
+  chord?: Chord; // Optional chord
   lessonId?: string; // ID of the lesson this card belongs to
   boxNumber: number; // 0-4 (5 boxes in Leitner system)
   lastReviewDate: number; // timestamp
@@ -29,7 +37,8 @@ export interface Lesson {
   id: string;
   name: string;
   description: string;
-  notes: Note[];
+  notes?: Note[]; // Optional notes for single-note lessons
+  chords?: Chord[]; // Optional chords for chord lessons
 }
 
 // Learning progress state

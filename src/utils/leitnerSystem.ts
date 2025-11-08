@@ -1,4 +1,4 @@
-import { FlashCard, LeitnerBox, Note, RehearsalSettings } from '../types';
+import { FlashCard, LeitnerBox, Note, Chord, RehearsalSettings } from '../types';
 import { generateNoteSet } from './noteUtils';
 import { loadSettings } from './settingsStorage';
 
@@ -25,21 +25,37 @@ const getIntervalMs = (boxNumber: number, settings?: RehearsalSettings): number 
   }
 };
 
-// Initialize flash cards for specific notes (or all notes if not specified)
-export const initializeFlashCards = (notes?: Note[], lessonId?: string): FlashCard[] => {
-  const notesToUse = notes || generateNoteSet();
+// Initialize flash cards for specific notes or chords
+export const initializeFlashCards = (notes?: Note[], lessonId?: string, chords?: Chord[]): FlashCard[] => {
+  if (chords) {
+    // Create cards from chords
+    return chords.map((chord, index) => ({
+      id: `card-chord-${chord.name}-${chord.type}-${index}`,
+      chord,
+      lessonId,
+      boxNumber: -1, // -1 means not yet introduced
+      lastReviewDate: 0,
+      nextReviewDate: 0,
+      reviewCount: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+    }));
+  } else {
+    // Create cards from notes
+    const notesToUse = notes || generateNoteSet();
 
-  return notesToUse.map((note, index) => ({
-    id: `card-${note.name}${note.octave}-${index}`,
-    note,
-    lessonId,
-    boxNumber: -1, // -1 means not yet introduced
-    lastReviewDate: 0,
-    nextReviewDate: 0,
-    reviewCount: 0,
-    correctCount: 0,
-    incorrectCount: 0,
-  }));
+    return notesToUse.map((note, index) => ({
+      id: `card-${note.name}${note.octave}-${index}`,
+      note,
+      lessonId,
+      boxNumber: -1, // -1 means not yet introduced
+      lastReviewDate: 0,
+      nextReviewDate: 0,
+      reviewCount: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+    }));
+  }
 };
 
 // Get cards that are due for review

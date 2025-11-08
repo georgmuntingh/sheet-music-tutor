@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { FlashCard as FlashCardType, Lesson, AppSettings, UserProfile } from './types';
+import { FlashCard as FlashCardType, Lesson, AppSettings, UserProfile, Note } from './types';
 import { FlashCard } from './components/FlashCard';
 import { ProgressDisplay } from './components/ProgressDisplay';
 import { Settings } from './components/Settings';
@@ -39,6 +39,7 @@ function App() {
   const [detector] = useState(() => new PianoPitchDetector(settings.audioDetection));
   const [isListening, setIsListening] = useState(false);
   const [detectedNote, setDetectedNote] = useState<string | null>(null);
+  const [detectedChord, setDetectedChord] = useState<Note[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showProgress, setShowProgress] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -65,9 +66,20 @@ function App() {
       return;
     }
 
-    // Shuffle notes before creating flash cards for random injection order
-    const shuffledNotes = shuffleArray(lesson.notes);
-    const newCards = initializeFlashCards(shuffledNotes, lesson.id);
+    let newCards: FlashCardType[];
+
+    if (lesson.chords) {
+      // Shuffle chords before creating flash cards for random injection order
+      const shuffledChords = shuffleArray(lesson.chords);
+      newCards = initializeFlashCards(undefined, lesson.id, shuffledChords);
+    } else if (lesson.notes) {
+      // Shuffle notes before creating flash cards for random injection order
+      const shuffledNotes = shuffleArray(lesson.notes);
+      newCards = initializeFlashCards(shuffledNotes, lesson.id);
+    } else {
+      return;
+    }
+
     const updatedCards = [...cards, ...newCards];
     const updatedInjectedIds = [...injectedLessonIds, lesson.id];
 
@@ -201,6 +213,7 @@ function App() {
     detector.stop();
     setIsListening(false);
     setDetectedNote(null);
+    setDetectedChord(null);
   };
 
   // Toggle pause/continue
@@ -212,16 +225,31 @@ function App() {
   const detectPitchLoop = useCallback(async () => {
     if (!detector.getIsRunning()) return;
 
-    const note = await detector.detectPitchStable(300, 2);
-    if (note) {
-      setDetectedNote(`${note.name}${note.octave}`);
+    // Detect chords if current card is a chord card
+    if (currentCard?.chord) {
+      const chord = await detector.detectChordStable(300, 3);
+      if (chord && chord.length > 0) {
+        setDetectedChord(chord);
+        setDetectedNote(null);
+      } else {
+        setDetectedChord(null);
+      }
+    } else {
+      // Detect single notes
+      const note = await detector.detectPitchStable(300, 2);
+      if (note) {
+        setDetectedNote(`${note.name}${note.octave}`);
+        setDetectedChord(null);
+      } else {
+        setDetectedNote(null);
+      }
     }
 
     // Continue detection if still listening
     if (detector.getIsRunning()) {
       setTimeout(detectPitchLoop, 100);
     }
-  }, [detector]);
+  }, [detector, currentCard]);
 
   // Handle correct answer
   const handleCorrect = useCallback(() => {
@@ -234,6 +262,7 @@ function App() {
 
     // Get next card immediately (FlashCard.tsx handles visual delay)
     setDetectedNote(null);
+    setDetectedChord(null);
     const nextCard = getNextCard(updatedCards);
 
     if (nextCard) {
@@ -264,6 +293,7 @@ function App() {
 
     // Get next card immediately (FlashCard.tsx handles visual delay)
     setDetectedNote(null);
+    setDetectedChord(null);
     const nextCard = getNextCard(updatedCards);
 
     if (nextCard) {
@@ -288,6 +318,7 @@ function App() {
     if (!currentUser) return;
 
     setDetectedNote(null);
+    setDetectedChord(null);
     const nextCard = getNextCard(cards);
 
     if (nextCard) {
@@ -516,6 +547,31 @@ function App() {
                 })}
               </div>
             </div>
+
+            {/* Major Chord Lessons */}
+            <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>Major Chords</h3>
+            <div className="lesson-grid">
+              <div className="lesson-grid-header">
+                <div className="lesson-grid-cell header">Lesson</div>
+              </div>
+              {[LESSONS[12], LESSONS[13], LESSONS[14]].map((lesson) => {
+                const isInjected = injectedLessonIds.includes(lesson.id);
+                return (
+                  <div key={lesson.id} className="lesson-grid-row">
+                    <button
+                      onClick={() => injectLesson(lesson)}
+                      disabled={isInjected}
+                      className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                      style={{ gridColumn: 'span 2' }}
+                    >
+                      <strong>{lesson.name}</strong>
+                      <span className="lesson-description">{lesson.description}</span>
+                      {isInjected && <span className="injected-badge">✓ Injected</span>}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -586,6 +642,7 @@ function App() {
             onNextCard={handleNextCard}
             isListening={isListening}
             detectedNote={detectedNote}
+            detectedChord={detectedChord}
             isPaused={isPaused}
           />
         )}
