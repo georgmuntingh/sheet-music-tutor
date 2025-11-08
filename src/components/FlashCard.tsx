@@ -43,11 +43,6 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setStableNote(null);
     setTextInput('');
 
-    // Auto-focus the input field
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-
     return () => {
       if (detectionTimer) {
         clearTimeout(detectionTimer);
@@ -57,6 +52,20 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       }
     };
   }, [card.id]);
+
+  // Auto-focus the input field when card changes and input is available
+  useEffect(() => {
+    // Use setTimeout to ensure the input is rendered after state updates
+    const focusTimeout = setTimeout(() => {
+      if (inputRef.current && !feedback && !hasAnswered && !isPaused) {
+        inputRef.current.focus();
+      }
+    }, 0);
+
+    return () => {
+      clearTimeout(focusTimeout);
+    };
+  }, [card.id, feedback, hasAnswered, isPaused]);
 
   // Handle note detection with delay
   useEffect(() => {
