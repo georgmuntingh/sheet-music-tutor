@@ -9,6 +9,7 @@ export interface Note {
 export interface FlashCard {
   id: string;
   note: Note;
+  lessonId?: string; // ID of the lesson this card belongs to
   boxNumber: number; // 0-4 (5 boxes in Leitner system)
   lastReviewDate: number; // timestamp
   nextReviewDate: number; // timestamp

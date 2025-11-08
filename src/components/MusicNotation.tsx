@@ -5,12 +5,14 @@ import { getClef } from '../utils/noteUtils';
 
 interface MusicNotationProps {
   note: Note;
+  lessonId?: string;
   width?: number;
   height?: number;
 }
 
 export const MusicNotation: React.FC<MusicNotationProps> = ({
   note,
+  lessonId,
   width = 400,
   height = 200,
 }) => {
@@ -27,8 +29,8 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
     renderer.resize(width, height);
     const context = renderer.getContext();
 
-    // Determine clef based on note
-    const clef = getClef(note);
+    // Determine clef based on note and lesson
+    const clef = getClef(note, lessonId);
 
     // Create stave
     const stave = new Stave(10, 40, width - 20);
@@ -64,7 +66,7 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
     staveNote.setContext(context).setStave(stave);
     staveNote.draw();
 
-  }, [note, width, height]);
+  }, [note, lessonId, width, height]);
 
   return (
     <div

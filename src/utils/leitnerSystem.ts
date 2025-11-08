@@ -26,12 +26,13 @@ const getIntervalMs = (boxNumber: number, settings?: RehearsalSettings): number 
 };
 
 // Initialize flash cards for specific notes (or all notes if not specified)
-export const initializeFlashCards = (notes?: Note[]): FlashCard[] => {
+export const initializeFlashCards = (notes?: Note[], lessonId?: string): FlashCard[] => {
   const notesToUse = notes || generateNoteSet();
 
   return notesToUse.map((note, index) => ({
     id: `card-${note.name}${note.octave}-${index}`,
     note,
+    lessonId,
     boxNumber: -1, // -1 means not yet introduced
     lastReviewDate: 0,
     nextReviewDate: 0,

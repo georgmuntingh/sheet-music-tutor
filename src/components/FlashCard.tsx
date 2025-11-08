@@ -214,7 +214,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       </div>
 
       <div className="notation-container">
-        <MusicNotation note={card.note} width={400} height={200} />
+        <MusicNotation note={card.note} lessonId={card.lessonId} width={400} height={200} />
       </div>
 
       <div className="card-content">
