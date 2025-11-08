@@ -1,4 +1,4 @@
-import { Lesson, Note } from '../types';
+import { Lesson, Note, Chord } from '../types';
 import { getFrequency } from './noteUtils';
 
 // Helper function to generate natural notes for a specific octave range
@@ -65,6 +65,97 @@ const generateBassClefAccidentals = (startOctave: number): Note[] => {
   ];
 
   return notes;
+};
+
+// Helper function to create a major chord with a specific root note
+const createMajorChord = (rootName: string, octave: number): Chord => {
+  // Major chord intervals: Root, Major Third (+4 semitones), Perfect Fifth (+7 semitones)
+  const root: Note = {
+    name: rootName,
+    octave,
+    frequency: getFrequency(rootName, octave),
+  };
+
+  // Calculate the third and fifth
+  const noteSequence = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  const rootIndex = noteSequence.indexOf(rootName);
+
+  // Major third is 4 semitones above root
+  const thirdIndex = (rootIndex + 4) % 12;
+  const thirdOctave = octave + Math.floor((rootIndex + 4) / 12);
+  const thirdName = noteSequence[thirdIndex];
+  const third: Note = {
+    name: thirdName,
+    octave: thirdOctave,
+    frequency: getFrequency(thirdName, thirdOctave),
+  };
+
+  // Perfect fifth is 7 semitones above root
+  const fifthIndex = (rootIndex + 7) % 12;
+  const fifthOctave = octave + Math.floor((rootIndex + 7) / 12);
+  const fifthName = noteSequence[fifthIndex];
+  const fifth: Note = {
+    name: fifthName,
+    octave: fifthOctave,
+    frequency: getFrequency(fifthName, fifthOctave),
+  };
+
+  return {
+    name: rootName,
+    notes: [root, third, fifth],
+    type: 'major',
+  };
+};
+
+// Helper function to create chord inversions
+const createChordInversions = (rootName: string, octave: number): Chord[] => {
+  const baseChord = createMajorChord(rootName, octave);
+  const [root, third, fifth] = baseChord.notes;
+
+  // Root position (e.g., C-E-G)
+  const rootPosition: Chord = {
+    name: rootName,
+    notes: [root, third, fifth],
+    type: 'major',
+  };
+
+  // First inversion (e.g., E-G-C)
+  // Move root up an octave
+  const firstInversion: Chord = {
+    name: rootName,
+    notes: [
+      third,
+      fifth,
+      { ...root, octave: root.octave + 1, frequency: getFrequency(root.name, root.octave + 1) },
+    ],
+    type: 'major',
+  };
+
+  // Second inversion (e.g., G-C-E)
+  // Move root and third up an octave
+  const secondInversion: Chord = {
+    name: rootName,
+    notes: [
+      fifth,
+      { ...root, octave: root.octave + 1, frequency: getFrequency(root.name, root.octave + 1) },
+      { ...third, octave: third.octave + 1, frequency: getFrequency(third.name, third.octave + 1) },
+    ],
+    type: 'major',
+  };
+
+  return [rootPosition, firstInversion, secondInversion];
+};
+
+// Helper function to generate all major chords with inversions
+const generateMajorChordsWithInversions = (rootNotes: string[], octave: number): Chord[] => {
+  const allChords: Chord[] = [];
+
+  for (const rootNote of rootNotes) {
+    const inversions = createChordInversions(rootNote, octave);
+    allChords.push(...inversions);
+  }
+
+  return allChords;
 };
 
 // Lesson 1: Middle C to B (C4 to B4) - "The Staff Basics"
@@ -163,6 +254,30 @@ const lesson12: Lesson = {
   notes: generateBassClefAccidentals(1),
 };
 
+// Lesson 13: Major Chords - Natural Notes (C, D, E, F, G, A, B)
+const lesson13: Lesson = {
+  id: 'lesson-13-major-chords-natural',
+  name: '13: Major Chords (Natural)',
+  description: 'Learn major chords built on natural notes (C, D, E, F, G, A, B) with all inversions',
+  chords: generateMajorChordsWithInversions(['C', 'D', 'E', 'F', 'G', 'A', 'B'], 4),
+};
+
+// Lesson 14: Major Chords - Sharp Notes (C#, D#, F#, G#, A#)
+const lesson14: Lesson = {
+  id: 'lesson-14-major-chords-sharp',
+  name: '14: Major Chords (Sharps)',
+  description: 'Practice major chords built on sharp notes (C#, D#, F#, G#, A#) with all inversions',
+  chords: generateMajorChordsWithInversions(['C#', 'D#', 'F#', 'G#', 'A#'], 4),
+};
+
+// Lesson 15: Major Chords - Flat Notes (Db, Eb, Gb, Ab, Bb)
+const lesson15: Lesson = {
+  id: 'lesson-15-major-chords-flat',
+  name: '15: Major Chords (Flats)',
+  description: 'Master major chords built on flat notes (Db, Eb, Gb, Ab, Bb) with all inversions',
+  chords: generateMajorChordsWithInversions(['Db', 'Eb', 'Gb', 'Ab', 'Bb'], 4),
+};
+
 // All available lessons
 export const LESSONS: Lesson[] = [
   lesson1,
@@ -177,6 +292,9 @@ export const LESSONS: Lesson[] = [
   lesson10,
   lesson11,
   lesson12,
+  lesson13,
+  lesson14,
+  lesson15,
 ];
 
 // Get a lesson by ID

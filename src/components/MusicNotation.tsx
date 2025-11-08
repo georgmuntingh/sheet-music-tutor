@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { Renderer, Stave, StaveNote, Formatter, Accidental, Voice } from 'vexflow';
-import { Note } from '../types';
+import { Note, Chord } from '../types';
 import { getClef } from '../utils/noteUtils';
 
 interface MusicNotationProps {
-  note: Note;
+  note?: Note;
+  chord?: Chord;
   lessonId?: string;
   width?: number;
   height?: number;
@@ -12,6 +13,7 @@ interface MusicNotationProps {
 
 export const MusicNotation: React.FC<MusicNotationProps> = ({
   note,
+  chord,
   lessonId,
   width = 400,
   height = 200,
@@ -29,30 +31,67 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
     renderer.resize(width, height);
     const context = renderer.getContext();
 
-    // Determine clef based on note and lesson
-    const clef = getClef(note, lessonId);
+    // Determine clef based on note/chord and lesson
+    const referenceNote = chord ? chord.notes[0] : note;
+    if (!referenceNote) return;
+
+    const clef = getClef(referenceNote, lessonId);
 
     // Create stave
     const stave = new Stave(10, 40, width - 20);
     stave.addClef(clef);
     stave.setContext(context).draw();
 
-    // Handle accidentals (sharps and flats)
-    const hasAccidental = note.name.includes('#') || note.name.includes('b');
-    const baseNote = note.name.replace('#', '').replace('b', '');
-    const accidental = note.name.includes('#') ? '#' : note.name.includes('b') ? 'b' : null;
+    let staveNote: StaveNote;
 
-    // Create the stave note
-    const keys = [`${baseNote}/${note.octave}`];
-    const staveNote = new StaveNote({
-      keys,
-      duration: 'w', // Whole note
-      clef,
-    });
+    if (chord) {
+      // Render chord (multiple notes)
+      const keys: string[] = [];
+      const accidentals: { index: number; accidental: string }[] = [];
 
-    // Add accidental if needed
-    if (hasAccidental && accidental) {
-      staveNote.addModifier(new Accidental(accidental), 0);
+      // Process each note in the chord
+      chord.notes.forEach((n, index) => {
+        const hasAccidental = n.name.includes('#') || n.name.includes('b');
+        const baseNote = n.name.replace('#', '').replace('b', '');
+        keys.push(`${baseNote}/${n.octave}`);
+
+        if (hasAccidental) {
+          const accidental = n.name.includes('#') ? '#' : 'b';
+          accidentals.push({ index, accidental });
+        }
+      });
+
+      // Create the stave note with all chord notes
+      staveNote = new StaveNote({
+        keys,
+        duration: 'w', // Whole note
+        clef,
+      });
+
+      // Add accidentals
+      accidentals.forEach(({ index, accidental }) => {
+        staveNote.addModifier(new Accidental(accidental), index);
+      });
+    } else if (note) {
+      // Render single note
+      const hasAccidental = note.name.includes('#') || note.name.includes('b');
+      const baseNote = note.name.replace('#', '').replace('b', '');
+      const accidental = note.name.includes('#') ? '#' : note.name.includes('b') ? 'b' : null;
+
+      // Create the stave note
+      const keys = [`${baseNote}/${note.octave}`];
+      staveNote = new StaveNote({
+        keys,
+        duration: 'w', // Whole note
+        clef,
+      });
+
+      // Add accidental if needed
+      if (hasAccidental && accidental) {
+        staveNote.addModifier(new Accidental(accidental), 0);
+      }
+    } else {
+      return;
     }
 
     // Create a voice and add the note
@@ -66,7 +105,7 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
     staveNote.setContext(context).setStave(stave);
     staveNote.draw();
 
-  }, [note, lessonId, width, height]);
+  }, [note, chord, lessonId, width, height]);
 
   return (
     <div

@@ -9,6 +9,11 @@ export interface PitchDetectionResult {
   harmonicRatio?: number; // 0-1, ratio of harmonic energy to total energy
 }
 
+export interface ChordDetectionResult {
+  notes: Note[];
+  confidence: number; // 0-1, how confident we are in the chord detection
+}
+
 export class PianoPitchDetector {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
@@ -210,6 +215,141 @@ export class PianoPitchDetector {
           }
 
           resolve(bestNote);
+        }
+      }, 50); // Check every 50ms
+    });
+  }
+
+  /**
+   * Detect multiple simultaneous pitches (for chord detection)
+   * Uses frequency spectrum analysis to find multiple fundamental frequencies
+   */
+  private detectMultiplePitches(): Note[] {
+    if (!this.analyser || !this.audioContext) {
+      return [];
+    }
+
+    // Get frequency spectrum
+    const spectrum = new Float32Array(this.analyser.frequencyBinCount);
+    this.analyser.getFloatFrequencyData(spectrum);
+
+    const binWidth = this.audioContext.sampleRate / this.analyser.fftSize;
+    const detectedNotes: Note[] = [];
+    const MIN_PEAK_DB = -60; // Minimum dB for a peak to be considered
+    const PEAK_SEARCH_RADIUS = 5; // Number of bins to search around a peak
+
+    // Find peaks in the spectrum that could represent fundamental frequencies
+    for (let i = 0; i < spectrum.length; i++) {
+      const frequency = i * binWidth;
+
+      // Skip frequencies outside piano range
+      if (frequency < this.MIN_FREQUENCY || frequency > this.MAX_FREQUENCY) {
+        continue;
+      }
+
+      // Check if this bin is a local maximum
+      const magnitude = spectrum[i];
+      if (magnitude < MIN_PEAK_DB) {
+        continue;
+      }
+
+      // Check if this is a peak (higher than neighboring bins)
+      let isPeak = true;
+      for (let offset = 1; offset <= PEAK_SEARCH_RADIUS; offset++) {
+        const leftIdx = i - offset;
+        const rightIdx = i + offset;
+
+        if (leftIdx >= 0 && spectrum[leftIdx] > magnitude) {
+          isPeak = false;
+          break;
+        }
+        if (rightIdx < spectrum.length && spectrum[rightIdx] > magnitude) {
+          isPeak = false;
+          break;
+        }
+      }
+
+      if (!isPeak) {
+        continue;
+      }
+
+      // Check if this frequency is likely a fundamental (not a harmonic)
+      // by verifying it's not a multiple of an already detected note
+      const isHarmonic = detectedNotes.some(existingNote => {
+        const ratio = frequency / existingNote.frequency;
+        // Check if this is approximately a 2x, 3x, 4x, etc. multiple
+        return Math.abs(ratio - Math.round(ratio)) < 0.05 && ratio > 1.5;
+      });
+
+      if (isHarmonic) {
+        continue;
+      }
+
+      // Convert frequency to note
+      const note = getNoteFromFrequency(frequency, 0.5);
+      if (note) {
+        detectedNotes.push(note);
+
+        // Limit to detecting at most 6 notes (most chords are 3-4 notes)
+        if (detectedNotes.length >= 6) {
+          break;
+        }
+      }
+    }
+
+    return detectedNotes;
+  }
+
+  /**
+   * Detect a chord (multiple simultaneous notes) over a period of time
+   * Returns the most stable set of notes detected
+   */
+  async detectChordStable(durationMs: number = 500, requiredDetections: number = 5): Promise<Note[] | null> {
+    const chordDetections: Map<string, { notes: Note[], count: number }> = new Map();
+    const startTime = Date.now();
+
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        const notes = this.detectMultiplePitches();
+
+        if (notes.length > 0) {
+          // Create a key from the sorted note names to group similar detections
+          const chordKey = notes
+            .map(n => `${n.name}${n.octave}`)
+            .sort()
+            .join('-');
+
+          if (!chordDetections.has(chordKey)) {
+            chordDetections.set(chordKey, { notes, count: 0 });
+          }
+
+          const detection = chordDetections.get(chordKey)!;
+          detection.count += 1;
+
+          // If we have enough consistent detections, return the chord
+          if (detection.count >= requiredDetections) {
+            clearInterval(interval);
+            resolve(detection.notes);
+            return;
+          }
+        }
+
+        // Timeout
+        if (Date.now() - startTime > durationMs) {
+          clearInterval(interval);
+
+          // Return the most frequently detected chord, if any
+          let maxCount = 0;
+          let bestChord: Note[] | null = null;
+
+          for (const [, detection] of chordDetections.entries()) {
+            if (detection.count > maxCount) {
+              maxCount = detection.count;
+              bestChord = detection.notes;
+            }
+          }
+
+          resolve(bestChord);
         }
       }, 50); // Check every 50ms
     });
