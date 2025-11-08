@@ -80,7 +80,9 @@ export const getClef = (_note: Note): 'treble' | 'bass' => {
 export const areNotesEquivalent = (note1: string, note2: string): boolean => {
   // Parse note name and octave from strings like "C#4" or "Db5"
   const parseNote = (noteStr: string): { name: string; octave: string } => {
-    const match = noteStr.match(/^([A-G][#b]?)(\d+)$/);
+    // Normalize to uppercase for case-insensitive comparison
+    const normalizedStr = noteStr.toUpperCase();
+    const match = normalizedStr.match(/^([A-G][#b]?)(\d+)$/);
     if (!match) {
       throw new Error(`Invalid note format: ${noteStr}`);
     }
