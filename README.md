@@ -75,6 +75,35 @@ npm run build
 
 The built files will be in the `dist` directory.
 
+## Deployment
+
+### GitHub Pages
+
+This project is configured for automatic deployment to GitHub Pages:
+
+- **Main Site**: Automatically deployed from the `main` branch to GitHub Pages
+- **PR Previews**: Automatically deployed for each pull request
+
+### PR Preview Deployments
+
+When you open or update a pull request, a preview deployment is automatically created:
+
+1. **Automatic Builds**: Every PR triggers a build and deployment to a preview URL
+2. **Preview URLs**: Accessible at `https://<username>.github.io/sheet-music-tutor/pr-previews/pr-<number>/`
+3. **Automatic Comments**: The workflow posts a comment on the PR with the preview link
+4. **Automatic Cleanup**: Preview deployments are removed when the PR is closed
+
+### GitHub Pages Configuration
+
+For the deployments to work, ensure GitHub Pages is configured in your repository settings:
+
+1. Go to **Settings** → **Pages**
+2. Under **Source**, select "Deploy from a branch"
+3. Select the **gh-pages** branch and **/ (root)** folder
+4. Click **Save**
+
+The workflows will automatically handle building and deploying to the `gh-pages` branch.
+
 ## Usage
 
 1. **Grant Microphone Access**: When you click "Start Listening", the browser will request microphone access. Allow this for the app to work.
