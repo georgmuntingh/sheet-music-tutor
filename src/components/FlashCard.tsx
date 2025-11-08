@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FlashCard as FlashCardType } from '../types';
 import { MusicNotation } from './MusicNotation';
 import { areNotesEquivalent } from '../utils/noteUtils';
@@ -30,6 +30,9 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const [hasAnswered, setHasAnswered] = useState(false);
   const [textInput, setTextInput] = useState('');
 
+  const inputRef = useRef<HTMLInputElement>(null);
+  const feedbackTimerRef = useRef<number | null>(null);
+
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
   // Reset state when card changes
@@ -40,9 +43,17 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setStableNote(null);
     setTextInput('');
 
+    // Auto-focus the input field
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+
     return () => {
       if (detectionTimer) {
         clearTimeout(detectionTimer);
+      }
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
       }
     };
   }, [card.id]);
@@ -74,13 +85,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             if (areNotesEquivalent(detectedNote, expectedNote)) {
               setFeedback('correct');
               setHasAnswered(true);
-              setTimeout(() => {
+              feedbackTimerRef.current = setTimeout(() => {
                 onCorrect();
               }, 1000);
             } else {
               setFeedback('incorrect');
               setHasAnswered(true);
-              setTimeout(() => {
+              feedbackTimerRef.current = setTimeout(() => {
                 onIncorrect();
               }, 1500);
             }
@@ -98,13 +109,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           if (areNotesEquivalent(detectedNote, expectedNote)) {
             setFeedback('correct');
             setHasAnswered(true);
-            setTimeout(() => {
+            feedbackTimerRef.current = setTimeout(() => {
               onCorrect();
             }, 1000);
           } else {
             setFeedback('incorrect');
             setHasAnswered(true);
-            setTimeout(() => {
+            feedbackTimerRef.current = setTimeout(() => {
               onIncorrect();
             }, 1500);
           }
@@ -122,6 +133,32 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       }
     }
   }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused, hasAnswered]);
+
+  // Handle Enter key to dismiss feedback
+  useEffect(() => {
+    if (!feedback) return;
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        // Clear the feedback timer
+        if (feedbackTimerRef.current) {
+          clearTimeout(feedbackTimerRef.current);
+          feedbackTimerRef.current = null;
+        }
+        // Immediately trigger the next action
+        if (feedback === 'correct') {
+          onCorrect();
+        } else {
+          onIncorrect();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [feedback, onCorrect, onIncorrect]);
 
   // Handle text input submission
   const handleTextSubmit = (e: React.FormEvent) => {
@@ -142,13 +179,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     if (areNotesEquivalent(textInput.trim(), expectedNote)) {
       setFeedback('correct');
       setHasAnswered(true);
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
         onCorrect();
       }, 1000);
     } else {
       setFeedback('incorrect');
       setHasAnswered(true);
-      setTimeout(() => {
+      feedbackTimerRef.current = setTimeout(() => {
         onIncorrect();
       }, 1500);
     }
@@ -191,6 +228,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         {!feedback && !hasAnswered && !isPaused && (
           <form onSubmit={handleTextSubmit} className="text-input-form">
             <input
+              ref={inputRef}
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
