@@ -28,6 +28,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const [detectionTimer, setDetectionTimer] = useState<number | null>(null);
   const [stableNote, setStableNote] = useState<string | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [textInput, setTextInput] = useState('');
 
   const expectedNote = `${card.note.name}${card.note.octave}`;
 
@@ -37,6 +38,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setFeedback(null);
     setShowNote(false);
     setStableNote(null);
+    setTextInput('');
 
     return () => {
       if (detectionTimer) {
@@ -121,6 +123,37 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     }
   }, [detectedNote, expectedNote, isListening, onCorrect, onIncorrect, feedback, detectionTimer, stableNote, isPaused, hasAnswered]);
 
+  // Handle text input submission
+  const handleTextSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Only process if not already answered and input is not empty
+    if (hasAnswered || !textInput.trim()) {
+      return;
+    }
+
+    // Clear any pending detection timer
+    if (detectionTimer) {
+      clearTimeout(detectionTimer);
+      setDetectionTimer(null);
+    }
+
+    // Check if the text input matches the expected note
+    if (areNotesEquivalent(textInput.trim(), expectedNote)) {
+      setFeedback('correct');
+      setHasAnswered(true);
+      setTimeout(() => {
+        onCorrect();
+      }, 1000);
+    } else {
+      setFeedback('incorrect');
+      setHasAnswered(true);
+      setTimeout(() => {
+        onIncorrect();
+      }, 1500);
+    }
+  };
+
   return (
     <div className={`flash-card ${feedback || ''}`}>
       <div className="card-header">
@@ -151,8 +184,24 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
         {isListening && !isPaused && !feedback && (
           <div className="instruction listening">
-            Play the note shown above on your piano...
+            Play the note shown above on your piano or type it below...
           </div>
+        )}
+
+        {!feedback && !hasAnswered && !isPaused && (
+          <form onSubmit={handleTextSubmit} className="text-input-form">
+            <input
+              type="text"
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="e.g., C4, D#5, Bb3"
+              className="note-input"
+              disabled={hasAnswered}
+            />
+            <button type="submit" className="submit-button" disabled={hasAnswered || !textInput.trim()}>
+              Submit
+            </button>
+          </form>
         )}
 
         {feedback === 'correct' && (
@@ -165,6 +214,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           <div className="feedback incorrect-feedback">
             ✗ Incorrect. The correct note is {card.note.name}{card.note.octave}
             {detectedNote && <div className="detected">You played: {detectedNote}</div>}
+            {textInput && !detectedNote && <div className="detected">You typed: {textInput}</div>}
           </div>
         )}
 
