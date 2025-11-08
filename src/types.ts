@@ -12,11 +12,22 @@ export interface Chord {
   type: string; // e.g., "major", "minor", "diminished"
 }
 
+// Math problem representation
+export interface MathProblem {
+  question: string; // e.g., "5 + 3"
+  answer: string; // e.g., "8"
+  operation?: string; // e.g., "addition", "subtraction", "multiplication", "division"
+}
+
+// Lesson mode type
+export type LessonMode = 'math' | 'music';
+
 // Flash card representation
 export interface FlashCard {
   id: string;
   note?: Note; // Optional single note
   chord?: Chord; // Optional chord
+  mathProblem?: MathProblem; // Optional math problem
   lessonId?: string; // ID of the lesson this card belongs to
   boxNumber: number; // 0-4 (5 boxes in Leitner system)
   lastReviewDate: number; // timestamp
@@ -37,8 +48,10 @@ export interface Lesson {
   id: string;
   name: string;
   description: string;
+  mode: LessonMode; // 'math' or 'music'
   notes?: Note[]; // Optional notes for single-note lessons
   chords?: Chord[]; // Optional chords for chord lessons
+  mathProblems?: MathProblem[]; // Optional math problems for math lessons
 }
 
 // Learning progress state
