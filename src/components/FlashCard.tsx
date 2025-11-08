@@ -36,10 +36,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const feedbackTimerRef = useRef<number | null>(null);
 
-  // Determine if this is a chord or single note card
+  // Determine card type
+  const isMathCard = !!card.mathProblem;
   const isChordCard = !!card.chord;
   const expectedNote = card.note ? `${card.note.name}${card.note.octave}` : '';
   const expectedChordName = card.chord ? card.chord.name : '';
+  const expectedMathAnswer = card.mathProblem ? card.mathProblem.answer : '';
 
   // Helper function to check if detected chord matches expected chord
   // Compares note names only (ignoring octaves) since a chord can be played in any octave
@@ -276,7 +278,10 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
     let isCorrect = false;
 
-    if (isChordCard) {
+    if (isMathCard) {
+      // For math problems, check if the input matches the expected answer
+      isCorrect = textInput.trim() === expectedMathAnswer;
+    } else if (isChordCard) {
       // For chords, just check if the input matches the chord name (case-insensitive)
       isCorrect = textInput.trim().toUpperCase() === expectedChordName.toUpperCase();
     } else {
@@ -313,27 +318,39 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       </div>
 
       <div className="notation-container">
-        <MusicNotation
-          note={card.note}
-          chord={card.chord}
-          lessonId={card.lessonId}
-          width={400}
-          height={200}
-        />
+        {isMathCard ? (
+          <div className="math-problem">
+            <div className="math-question">{card.mathProblem?.question}</div>
+          </div>
+        ) : (
+          <MusicNotation
+            note={card.note}
+            chord={card.chord}
+            lessonId={card.lessonId}
+            width={400}
+            height={200}
+          />
+        )}
       </div>
 
       <div className="card-content">
-        {!isListening && (
+        {!isListening && !isMathCard && (
           <div className="instruction">Click "Start Listening" to begin</div>
         )}
 
-        {isListening && isPaused && (
+        {isListening && isPaused && !isMathCard && (
           <div className="instruction paused">
             Paused - Click "Continue" to resume
           </div>
         )}
 
-        {isListening && !isPaused && !feedback && (
+        {isMathCard && !feedback && (
+          <div className="instruction listening">
+            Type your answer below...
+          </div>
+        )}
+
+        {isListening && !isPaused && !feedback && !isMathCard && (
           <div className="instruction listening">
             {isChordCard
               ? 'Play the chord shown above on your piano or type the chord name below...'

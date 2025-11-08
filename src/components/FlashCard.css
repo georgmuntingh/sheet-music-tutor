@@ -42,6 +42,21 @@
   border-radius: 8px;
 }
 
+.math-problem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  padding: 2rem;
+}
+
+.math-question {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #333;
+  text-align: center;
+}
+
 .card-content {
   min-height: 80px;
   margin: 1.5rem 0;
@@ -247,5 +262,9 @@
 
   .note-input:disabled {
     background: #1a1a1a;
+  }
+
+  .math-question {
+    color: rgba(255, 255, 255, 0.87);
   }
 }
