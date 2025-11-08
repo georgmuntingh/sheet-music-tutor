@@ -70,8 +70,25 @@ export const toVexFlowNote = (note: Note): string => {
 };
 
 // Get the clef for a note (treble or bass)
-export const getClef = (_note: Note): 'treble' | 'bass' => {
-  // Always use treble clef (G-clef) for all lessons
+export const getClef = (_note: Note, lessonId?: string): 'treble' | 'bass' => {
+  // Determine clef based on lesson ID
+  // Bass clef lessons are lessons 7-12 (lesson-7-*, lesson-8-*, etc.)
+  if (lessonId) {
+    const bassClefPrefixes = [
+      'lesson-7-',
+      'lesson-8-',
+      'lesson-9-',
+      'lesson-10-',
+      'lesson-11-',
+      'lesson-12-',
+    ];
+
+    if (bassClefPrefixes.some(prefix => lessonId.startsWith(prefix))) {
+      return 'bass';
+    }
+  }
+
+  // Default to treble clef for lessons 1-6 or when lessonId is not provided
   return 'treble';
 };
 

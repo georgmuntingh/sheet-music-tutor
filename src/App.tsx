@@ -67,7 +67,7 @@ function App() {
 
     // Shuffle notes before creating flash cards for random injection order
     const shuffledNotes = shuffleArray(lesson.notes);
-    const newCards = initializeFlashCards(shuffledNotes);
+    const newCards = initializeFlashCards(shuffledNotes, lesson.id);
     const updatedCards = [...cards, ...newCards];
     const updatedInjectedIds = [...injectedLessonIds, lesson.id];
 
