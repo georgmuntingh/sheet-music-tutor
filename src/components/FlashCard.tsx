@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FlashCard as FlashCardType, Note } from '../types';
 import { MusicNotation } from './MusicNotation';
 import { areNotesEquivalent } from '../utils/noteUtils';
@@ -42,20 +42,23 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const expectedChordName = card.chord ? card.chord.name : '';
 
   // Helper function to check if detected chord matches expected chord
-  const chordMatches = (detected: Note[], expected: Note[]): boolean => {
+  // Compares note names only (ignoring octaves) since a chord can be played in any octave
+  const chordMatches = useCallback((detected: Note[], expected: Note[]): boolean => {
     if (detected.length !== expected.length) {
       return false;
     }
 
-    // Sort both arrays by frequency for comparison
-    const sortedDetected = [...detected].sort((a, b) => a.frequency - b.frequency);
-    const sortedExpected = [...expected].sort((a, b) => a.frequency - b.frequency);
+    // Extract and sort note names (without octaves) for comparison
+    const detectedNames = detected.map(n => n.name).sort();
+    const expectedNames = expected.map(n => n.name).sort();
 
-    // Check if all notes match
-    return sortedDetected.every((note, index) =>
-      areNotesEquivalent(`${note.name}${note.octave}`, `${sortedExpected[index].name}${sortedExpected[index].octave}`)
-    );
-  };
+    // Check if all note names match (accounting for enharmonic equivalents)
+    return detectedNames.every((name, index) => {
+      const expectedName = expectedNames[index];
+      // Use areNotesEquivalent but append a dummy octave for comparison
+      return areNotesEquivalent(`${name}4`, `${expectedName}4`);
+    });
+  }, []);
 
   // Reset state when card changes
   useEffect(() => {
