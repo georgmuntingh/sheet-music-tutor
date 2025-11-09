@@ -37,8 +37,10 @@ export const MusicNotation: React.FC<MusicNotationProps> = ({
 
     const clef = getClef(referenceNote, lessonId);
 
-    // Create stave
-    const stave = new Stave(10, 40, width - 20);
+    // Create stave with responsive vertical positioning
+    // Use smaller top margin for compact displays
+    const staveY = height < 150 ? 10 : 40;
+    const stave = new Stave(10, staveY, width - 20);
     stave.addClef(clef);
     stave.setContext(context).draw();
 

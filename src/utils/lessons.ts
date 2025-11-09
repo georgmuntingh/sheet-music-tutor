@@ -327,7 +327,7 @@ const generateMathProblems = (
       case 'division':
         // Ensure division results in whole numbers
         const product = a * b;
-        question = `${product} ÷ ${b}`;
+        question = `${product} / ${b}`;
         answer = String(a);
         break;
       default:
