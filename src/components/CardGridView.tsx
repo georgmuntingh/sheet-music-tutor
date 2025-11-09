@@ -28,11 +28,11 @@ const CardGridView: React.FC<CardGridViewProps> = ({ cards, title, onClose }) =>
     if (card.mathProblem) {
       return (
         <div className="grid-card-content math-content">
-          <div className="math-problem-text">
-            {isFlipped ? card.mathProblem.answer : card.mathProblem.question}
-          </div>
           <div className="card-side-label">
             {isFlipped ? 'Answer' : 'Question'}
+          </div>
+          <div className="math-problem-text">
+            {isFlipped ? card.mathProblem.answer : card.mathProblem.question}
           </div>
         </div>
       );
@@ -48,23 +48,23 @@ const CardGridView: React.FC<CardGridViewProps> = ({ cards, title, onClose }) =>
 
       return (
         <div className="grid-card-content card-answer">
+          <div className="card-side-label">Answer</div>
           <div className="answer-text">
             {answer}
           </div>
-          <div className="card-side-label">Answer</div>
         </div>
       );
     }
 
     return (
       <div className="grid-card-content">
+        <div className="card-side-label">Question</div>
         <MusicNotation
           note={card.note}
           chord={card.chord}
           width={150}
-          height={100}
+          height={120}
         />
-        <div className="card-side-label">Question</div>
       </div>
     );
   };
