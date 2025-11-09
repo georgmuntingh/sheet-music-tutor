@@ -63,7 +63,7 @@ const CardGridView: React.FC<CardGridViewProps> = ({ cards, title, onClose }) =>
           note={card.note}
           chord={card.chord}
           width={150}
-          height={120}
+          height={130}
         />
       </div>
     );

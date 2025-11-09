@@ -96,11 +96,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 140px;
+  justify-content: flex-start;
+  min-height: 160px;
   background: #f9f9f9;
   border-radius: 4px;
-  padding: 0.5rem;
+  padding: 0.5rem 0.5rem 0.25rem 0.5rem;
+  overflow: visible;
 }
 
 .math-content {
@@ -145,7 +146,7 @@
   color: #999;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   font-weight: 500;
 }
 
