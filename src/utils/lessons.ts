@@ -341,6 +341,26 @@ const generateMathProblems = (
   return problems;
 };
 
+// Helper function to generate multiplication table problems for a specific number
+const generateMultiplicationTable = (
+  tableNumber: number,
+  count: number = 20
+): MathProblem[] => {
+  const problems: MathProblem[] = [];
+
+  for (let i = 0; i < count; i++) {
+    // Generate problems for the multiplication table
+    // For table of N, generate N × 0, N × 1, ..., N × 10
+    const multiplier = Math.floor(Math.random() * 11); // 0 to 10
+    const question = `${tableNumber} × ${multiplier}`;
+    const answer = String(tableNumber * multiplier);
+
+    problems.push({ question, answer, operation: 'multiplication' });
+  }
+
+  return problems;
+};
+
 // Math Lesson 1: Addition (0-10)
 const mathLesson1: Lesson = {
   id: 'math-lesson-1-addition-basic',
@@ -395,37 +415,109 @@ const mathLesson6: Lesson = {
   mathProblems: generateMathProblems('subtraction', [0, 100], [0, 100], 20),
 };
 
-// Math Lesson 7: Multiplication (0-10)
+// Math Lesson 7: Multiplication Table of 1
 const mathLesson7: Lesson = {
-  id: 'math-lesson-7-multiplication-basic',
-  name: 'M7: Multiplication (0-10)',
-  description: 'Practice basic multiplication tables (0-10)',
+  id: 'math-lesson-7-multiplication-table-1',
+  name: 'M7: Multiplication Table of 1',
+  description: 'Practice the multiplication table of 1',
   mode: 'math',
-  mathProblems: generateMathProblems('multiplication', [0, 10], [0, 10], 20),
+  mathProblems: generateMultiplicationTable(1, 20),
 };
 
-// Math Lesson 8: Multiplication (0-12)
+// Math Lesson 8: Multiplication Table of 2
 const mathLesson8: Lesson = {
-  id: 'math-lesson-8-multiplication-medium',
-  name: 'M8: Multiplication (0-12)',
-  description: 'Practice extended multiplication tables (0-12)',
+  id: 'math-lesson-8-multiplication-table-2',
+  name: 'M8: Multiplication Table of 2',
+  description: 'Practice the multiplication table of 2',
   mode: 'math',
-  mathProblems: generateMathProblems('multiplication', [0, 12], [0, 12], 20),
+  mathProblems: generateMultiplicationTable(2, 20),
 };
 
-// Math Lesson 9: Division (0-10)
+// Math Lesson 9: Multiplication Table of 3
 const mathLesson9: Lesson = {
-  id: 'math-lesson-9-division-basic',
-  name: 'M9: Division (0-10)',
+  id: 'math-lesson-9-multiplication-table-3',
+  name: 'M9: Multiplication Table of 3',
+  description: 'Practice the multiplication table of 3',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(3, 20),
+};
+
+// Math Lesson 10: Multiplication Table of 4
+const mathLesson10: Lesson = {
+  id: 'math-lesson-10-multiplication-table-4',
+  name: 'M10: Multiplication Table of 4',
+  description: 'Practice the multiplication table of 4',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(4, 20),
+};
+
+// Math Lesson 11: Multiplication Table of 5
+const mathLesson11: Lesson = {
+  id: 'math-lesson-11-multiplication-table-5',
+  name: 'M11: Multiplication Table of 5',
+  description: 'Practice the multiplication table of 5',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(5, 20),
+};
+
+// Math Lesson 12: Multiplication Table of 6
+const mathLesson12: Lesson = {
+  id: 'math-lesson-12-multiplication-table-6',
+  name: 'M12: Multiplication Table of 6',
+  description: 'Practice the multiplication table of 6',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(6, 20),
+};
+
+// Math Lesson 13: Multiplication Table of 7
+const mathLesson13: Lesson = {
+  id: 'math-lesson-13-multiplication-table-7',
+  name: 'M13: Multiplication Table of 7',
+  description: 'Practice the multiplication table of 7',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(7, 20),
+};
+
+// Math Lesson 14: Multiplication Table of 8
+const mathLesson14: Lesson = {
+  id: 'math-lesson-14-multiplication-table-8',
+  name: 'M14: Multiplication Table of 8',
+  description: 'Practice the multiplication table of 8',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(8, 20),
+};
+
+// Math Lesson 15: Multiplication Table of 9
+const mathLesson15: Lesson = {
+  id: 'math-lesson-15-multiplication-table-9',
+  name: 'M15: Multiplication Table of 9',
+  description: 'Practice the multiplication table of 9',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(9, 20),
+};
+
+// Math Lesson 16: Multiplication Table of 10
+const mathLesson16: Lesson = {
+  id: 'math-lesson-16-multiplication-table-10',
+  name: 'M16: Multiplication Table of 10',
+  description: 'Practice the multiplication table of 10',
+  mode: 'math',
+  mathProblems: generateMultiplicationTable(10, 20),
+};
+
+// Math Lesson 17: Division (0-10)
+const mathLesson17: Lesson = {
+  id: 'math-lesson-17-division-basic',
+  name: 'M17: Division (0-10)',
   description: 'Practice basic division with numbers from 0 to 10',
   mode: 'math',
   mathProblems: generateMathProblems('division', [1, 10], [1, 10], 20),
 };
 
-// Math Lesson 10: Division (0-12)
-const mathLesson10: Lesson = {
-  id: 'math-lesson-10-division-medium',
-  name: 'M10: Division (0-12)',
+// Math Lesson 18: Division (0-12)
+const mathLesson18: Lesson = {
+  id: 'math-lesson-18-division-medium',
+  name: 'M18: Division (0-12)',
   description: 'Practice division with numbers from 0 to 12',
   mode: 'math',
   mathProblems: generateMathProblems('division', [1, 12], [1, 12], 20),
@@ -460,6 +552,14 @@ export const LESSONS: Lesson[] = [
   mathLesson8,
   mathLesson9,
   mathLesson10,
+  mathLesson11,
+  mathLesson12,
+  mathLesson13,
+  mathLesson14,
+  mathLesson15,
+  mathLesson16,
+  mathLesson17,
+  mathLesson18,
 ];
 
 // Get a lesson by ID
