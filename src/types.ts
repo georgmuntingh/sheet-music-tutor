@@ -83,6 +83,7 @@ export interface AudioDetectionSettings {
 export interface AppSettings {
   rehearsal: RehearsalSettings;
   audioDetection: AudioDetectionSettings;
+  timeout: number; // Timeout in seconds (0 = infinite time)
 }
 
 // User profile representation

@@ -13,6 +13,7 @@ interface FlashCardProps {
   detectedNote: string | null;
   detectedChord: Note[] | null; // For chord detection
   isPaused: boolean;
+  timeout: number; // Timeout in seconds (0 = infinite)
 }
 
 export const FlashCard: React.FC<FlashCardProps> = ({
@@ -24,6 +25,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   detectedNote,
   detectedChord,
   isPaused,
+  timeout,
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
@@ -32,9 +34,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const [stableChord, setStableChord] = useState<Note[] | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [textInput, setTextInput] = useState('');
+  const [remainingTime, setRemainingTime] = useState<number | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const feedbackTimerRef = useRef<number | null>(null);
+  const timeoutTimerRef = useRef<number | null>(null);
 
   // Determine card type
   const isMathCard = !!card.mathProblem;
@@ -71,6 +75,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setStableChord(null);
     setTextInput('');
 
+    // Initialize timeout for boxes other than box 1 (boxNumber 0)
+    if (timeout > 0 && card.boxNumber !== 0) {
+      setRemainingTime(timeout);
+    } else {
+      setRemainingTime(null);
+    }
+
     return () => {
       if (detectionTimer) {
         clearTimeout(detectionTimer);
@@ -78,8 +89,55 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       if (feedbackTimerRef.current) {
         clearTimeout(feedbackTimerRef.current);
       }
+      if (timeoutTimerRef.current) {
+        clearInterval(timeoutTimerRef.current);
+      }
     };
-  }, [card.id]);
+  }, [card.id, timeout, card.boxNumber]);
+
+  // Handle timeout countdown
+  useEffect(() => {
+    // Don't start timer if:
+    // - No timeout is set (remainingTime is null)
+    // - User has already answered
+    // - Feedback is being shown
+    // - Session is paused
+    if (remainingTime === null || hasAnswered || feedback || isPaused) {
+      // Clear any running timer
+      if (timeoutTimerRef.current) {
+        clearInterval(timeoutTimerRef.current);
+        timeoutTimerRef.current = null;
+      }
+      return;
+    }
+
+    // If time has run out, mark as incorrect
+    if (remainingTime <= 0) {
+      setFeedback('incorrect');
+      setHasAnswered(true);
+      feedbackTimerRef.current = setTimeout(() => {
+        onIncorrect();
+      }, 1500);
+      return;
+    }
+
+    // Start countdown timer
+    timeoutTimerRef.current = setInterval(() => {
+      setRemainingTime(prev => {
+        if (prev === null || prev <= 0) {
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timeoutTimerRef.current) {
+        clearInterval(timeoutTimerRef.current);
+        timeoutTimerRef.current = null;
+      }
+    };
+  }, [remainingTime, hasAnswered, feedback, isPaused, onIncorrect]);
 
   // Auto-focus the input field when card changes and input is available
   useEffect(() => {
@@ -312,6 +370,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({
           {card.reviewCount > 0 && (
             <span>
               {card.correctCount}/{card.reviewCount} correct
+            </span>
+          )}
+          {remainingTime !== null && !feedback && (
+            <span className={`timeout-display ${remainingTime <= 5 ? 'timeout-warning' : ''}`}>
+              ⏱ {remainingTime}s
             </span>
           )}
         </div>
