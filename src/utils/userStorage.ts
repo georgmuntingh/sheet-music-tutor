@@ -128,12 +128,13 @@ export function initializeDefaultProfiles(): UserProfile[] {
     return existingProfiles;
   }
 
-  // Create Ella and Georg profiles
+  // Create Ella, Georg, and Mina profiles
   const ella = createUserProfile('Ella');
   const georg = createUserProfile('Georg');
+  const mina = createUserProfile('Mina');
 
   // Set Ella as the default active user
   setCurrentUserId(ella.id);
 
-  return [ella, georg];
+  return [ella, georg, mina];
 }
