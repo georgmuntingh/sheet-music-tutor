@@ -14,6 +14,7 @@ interface FlashCardProps {
   detectedChord: Note[] | null; // For chord detection
   isPaused: boolean;
   timeout: number; // Timeout in seconds (0 = infinite)
+  silentTimeout: boolean; // Hide timer, allow answering after timeout
 }
 
 export const FlashCard: React.FC<FlashCardProps> = ({
@@ -26,6 +27,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   detectedChord,
   isPaused,
   timeout,
+  silentTimeout,
 }) => {
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showNote, setShowNote] = useState(false);
@@ -35,6 +37,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
   const [hasAnswered, setHasAnswered] = useState(false);
   const [textInput, setTextInput] = useState('');
   const [remainingTime, setRemainingTime] = useState<number | null>(null);
+  const [timeoutExpired, setTimeoutExpired] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const feedbackTimerRef = useRef<number | null>(null);
@@ -74,6 +77,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
     setStableNote(null);
     setStableChord(null);
     setTextInput('');
+    setTimeoutExpired(false);
 
     // Initialize timeout for boxes other than box 1 (boxNumber 0)
     if (timeout > 0 && card.boxNumber !== 0) {
@@ -111,13 +115,20 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       return;
     }
 
-    // If time has run out, mark as incorrect
+    // If time has run out
     if (remainingTime <= 0) {
-      setFeedback('incorrect');
-      setHasAnswered(true);
-      feedbackTimerRef.current = setTimeout(() => {
-        onIncorrect();
-      }, 1500);
+      // Mark that timeout has expired
+      setTimeoutExpired(true);
+
+      // In silent timeout mode, don't auto-mark as incorrect - let user continue
+      if (!silentTimeout) {
+        // In normal mode, mark as incorrect
+        setFeedback('incorrect');
+        setHasAnswered(true);
+        feedbackTimerRef.current = setTimeout(() => {
+          onIncorrect();
+        }, 1500);
+      }
       return;
     }
 
@@ -137,7 +148,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
         timeoutTimerRef.current = null;
       }
     };
-  }, [remainingTime, hasAnswered, feedback, isPaused, onIncorrect]);
+  }, [remainingTime, hasAnswered, feedback, isPaused, silentTimeout, onIncorrect]);
 
   // Auto-focus the input field when card changes and input is available
   useEffect(() => {
@@ -193,7 +204,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               setFeedback('correct');
               setHasAnswered(true);
               feedbackTimerRef.current = setTimeout(() => {
-                onCorrect();
+                // In silent timeout mode, if timeout expired, treat as incorrect for progression
+                if (silentTimeout && timeoutExpired) {
+                  onIncorrect();
+                } else {
+                  onCorrect();
+                }
               }, 1000);
             } else {
               setFeedback('incorrect');
@@ -215,7 +231,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             setFeedback('correct');
             setHasAnswered(true);
             feedbackTimerRef.current = setTimeout(() => {
-              onCorrect();
+              // In silent timeout mode, if timeout expired, treat as incorrect for progression
+              if (silentTimeout && timeoutExpired) {
+                onIncorrect();
+              } else {
+                onCorrect();
+              }
             }, 1000);
           } else {
             setFeedback('incorrect');
@@ -245,7 +266,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               setFeedback('correct');
               setHasAnswered(true);
               feedbackTimerRef.current = setTimeout(() => {
-                onCorrect();
+                // In silent timeout mode, if timeout expired, treat as incorrect for progression
+                if (silentTimeout && timeoutExpired) {
+                  onIncorrect();
+                } else {
+                  onCorrect();
+                }
               }, 1000);
             } else {
               setFeedback('incorrect');
@@ -268,7 +294,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
             setFeedback('correct');
             setHasAnswered(true);
             feedbackTimerRef.current = setTimeout(() => {
-              onCorrect();
+              // In silent timeout mode, if timeout expired, treat as incorrect for progression
+              if (silentTimeout && timeoutExpired) {
+                onIncorrect();
+              } else {
+                onCorrect();
+              }
             }, 1000);
           } else {
             setFeedback('incorrect');
@@ -351,7 +382,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       setFeedback('correct');
       setHasAnswered(true);
       feedbackTimerRef.current = setTimeout(() => {
-        onCorrect();
+        // In silent timeout mode, if timeout expired, treat as incorrect for progression
+        if (silentTimeout && timeoutExpired) {
+          onIncorrect();
+        } else {
+          onCorrect();
+        }
       }, 1000);
     } else {
       setFeedback('incorrect');
@@ -372,7 +408,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               {card.correctCount}/{card.reviewCount} correct
             </span>
           )}
-          {remainingTime !== null && !feedback && (
+          {remainingTime !== null && !feedback && !silentTimeout && (
             <span className={`timeout-display ${remainingTime <= 5 ? 'timeout-warning' : ''}`}>
               ⏱ {remainingTime}s
             </span>

@@ -22,6 +22,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   rehearsal: DEFAULT_REHEARSAL_SETTINGS,
   audioDetection: DEFAULT_AUDIO_SETTINGS,
   timeout: 10, // Default timeout: 10 seconds
+  silentTimeout: true, // Hide timer by default, allow answering after timeout
 };
 
 // Legacy export for backward compatibility
@@ -62,6 +63,7 @@ export const loadSettings = (userId?: string): AppSettings => {
           rehearsal: parsed as RehearsalSettings,
           audioDetection: DEFAULT_AUDIO_SETTINGS,
           timeout: DEFAULT_SETTINGS.timeout,
+          silentTimeout: DEFAULT_SETTINGS.silentTimeout,
         };
       }
 
@@ -70,6 +72,7 @@ export const loadSettings = (userId?: string): AppSettings => {
         rehearsal: parsed.rehearsal || DEFAULT_REHEARSAL_SETTINGS,
         audioDetection: parsed.audioDetection || DEFAULT_AUDIO_SETTINGS,
         timeout: parsed.timeout !== undefined ? parsed.timeout : DEFAULT_SETTINGS.timeout,
+        silentTimeout: parsed.silentTimeout !== undefined ? parsed.silentTimeout : DEFAULT_SETTINGS.silentTimeout,
       };
     }
   } catch (error) {

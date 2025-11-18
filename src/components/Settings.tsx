@@ -54,6 +54,14 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
     }
   };
 
+  const handleSilentTimeoutChange = (value: boolean) => {
+    setSettings(prev => ({
+      ...prev,
+      silentTimeout: value,
+    }));
+    setHasChanges(true);
+  };
+
   const handleSave = () => {
     saveSettings(settings, userId);
     setHasChanges(false);
@@ -227,6 +235,31 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
               <small className="default-value">Default: {DEFAULT_SETTINGS.timeout} seconds</small>
               <p className="setting-help">
                 Set to 0 for infinite time. Otherwise, the answer is automatically marked as incorrect after the timeout.
+              </p>
+            </div>
+
+            <div className="setting-item">
+              <label htmlFor="silentTimeout">
+                <strong>Silent Timeout</strong>
+              </label>
+              <div className="input-group">
+                <input
+                  type="checkbox"
+                  id="silentTimeout"
+                  checked={settings.silentTimeout}
+                  onChange={(e) => handleSilentTimeoutChange(e.target.checked)}
+                />
+                <label htmlFor="silentTimeout" className="checkbox-label">
+                  Hide timer and allow answering after timeout
+                </label>
+              </div>
+              <small className="default-value">
+                Default: {DEFAULT_SETTINGS.silentTimeout ? 'Enabled' : 'Disabled'}
+              </small>
+              <p className="setting-help">
+                When enabled, the countdown timer is hidden and you can continue answering after timeout.
+                Correct answers are shown with green feedback, but cards only progress to the next box if answered correctly before timeout.
+                Otherwise, they go to Box 1.
               </p>
             </div>
           </div>

@@ -84,6 +84,7 @@ export interface AppSettings {
   rehearsal: RehearsalSettings;
   audioDetection: AudioDetectionSettings;
   timeout: number; // Timeout in seconds (0 = infinite time)
+  silentTimeout: boolean; // Hide timer, allow answering after timeout, but require correct answer before timeout for progression
 }
 
 // User profile representation
