@@ -712,6 +712,7 @@ function App() {
             detectedChord={detectedChord}
             isPaused={isPaused}
             timeout={settings.timeout}
+            silentTimeout={settings.silentTimeout}
           />
         )}
       </main>
