@@ -343,15 +343,12 @@ const generateMathProblems = (
 
 // Helper function to generate multiplication table problems for a specific number
 const generateMultiplicationTable = (
-  tableNumber: number,
-  count: number = 20
+  tableNumber: number
 ): MathProblem[] => {
   const problems: MathProblem[] = [];
 
-  for (let i = 0; i < count; i++) {
-    // Generate problems for the multiplication table
-    // For table of N, generate N × 0, N × 1, ..., N × 10
-    const multiplier = Math.floor(Math.random() * 11); // 0 to 10
+  // Generate exactly 11 problems: N × 0, N × 1, ..., N × 10
+  for (let multiplier = 0; multiplier <= 10; multiplier++) {
     const question = `${tableNumber} × ${multiplier}`;
     const answer = String(tableNumber * multiplier);
 
@@ -421,7 +418,7 @@ const mathLesson7: Lesson = {
   name: 'M7: Multiplication Table of 1',
   description: 'Practice the multiplication table of 1',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(1, 20),
+  mathProblems: generateMultiplicationTable(1),
 };
 
 // Math Lesson 8: Multiplication Table of 2
@@ -430,7 +427,7 @@ const mathLesson8: Lesson = {
   name: 'M8: Multiplication Table of 2',
   description: 'Practice the multiplication table of 2',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(2, 20),
+  mathProblems: generateMultiplicationTable(2),
 };
 
 // Math Lesson 9: Multiplication Table of 3
@@ -439,7 +436,7 @@ const mathLesson9: Lesson = {
   name: 'M9: Multiplication Table of 3',
   description: 'Practice the multiplication table of 3',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(3, 20),
+  mathProblems: generateMultiplicationTable(3),
 };
 
 // Math Lesson 10: Multiplication Table of 4
@@ -448,7 +445,7 @@ const mathLesson10: Lesson = {
   name: 'M10: Multiplication Table of 4',
   description: 'Practice the multiplication table of 4',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(4, 20),
+  mathProblems: generateMultiplicationTable(4),
 };
 
 // Math Lesson 11: Multiplication Table of 5
@@ -457,7 +454,7 @@ const mathLesson11: Lesson = {
   name: 'M11: Multiplication Table of 5',
   description: 'Practice the multiplication table of 5',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(5, 20),
+  mathProblems: generateMultiplicationTable(5),
 };
 
 // Math Lesson 12: Multiplication Table of 6
@@ -466,7 +463,7 @@ const mathLesson12: Lesson = {
   name: 'M12: Multiplication Table of 6',
   description: 'Practice the multiplication table of 6',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(6, 20),
+  mathProblems: generateMultiplicationTable(6),
 };
 
 // Math Lesson 13: Multiplication Table of 7
@@ -475,7 +472,7 @@ const mathLesson13: Lesson = {
   name: 'M13: Multiplication Table of 7',
   description: 'Practice the multiplication table of 7',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(7, 20),
+  mathProblems: generateMultiplicationTable(7),
 };
 
 // Math Lesson 14: Multiplication Table of 8
@@ -484,7 +481,7 @@ const mathLesson14: Lesson = {
   name: 'M14: Multiplication Table of 8',
   description: 'Practice the multiplication table of 8',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(8, 20),
+  mathProblems: generateMultiplicationTable(8),
 };
 
 // Math Lesson 15: Multiplication Table of 9
@@ -493,7 +490,7 @@ const mathLesson15: Lesson = {
   name: 'M15: Multiplication Table of 9',
   description: 'Practice the multiplication table of 9',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(9, 20),
+  mathProblems: generateMultiplicationTable(9),
 };
 
 // Math Lesson 16: Multiplication Table of 10
@@ -502,7 +499,7 @@ const mathLesson16: Lesson = {
   name: 'M16: Multiplication Table of 10',
   description: 'Practice the multiplication table of 10',
   mode: 'math',
-  mathProblems: generateMultiplicationTable(10, 20),
+  mathProblems: generateMultiplicationTable(10),
 };
 
 // Math Lesson 17: Division (0-10)
