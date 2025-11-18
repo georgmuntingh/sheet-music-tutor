@@ -43,6 +43,17 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
     setHasChanges(true);
   };
 
+  const handleTimeoutChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue) && numValue >= 0) {
+      setSettings(prev => ({
+        ...prev,
+        timeout: numValue,
+      }));
+      setHasChanges(true);
+    }
+  };
+
   const handleSave = () => {
     saveSettings(settings, userId);
     setHasChanges(false);
@@ -187,6 +198,41 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
 
           <div className="settings-tip">
             <strong>💡 Tip:</strong> Shorter intervals help with initial learning, while longer intervals reinforce long-term memory.
+          </div>
+
+          <h3>Answer Timeout</h3>
+          <p className="settings-description">
+            Set how long users have to answer each question. Box 1 always has infinite time.
+          </p>
+
+          <div className="settings-grid">
+            <div className="setting-item">
+              <label htmlFor="timeout">
+                <strong>Timeout Duration</strong>
+                <span className="interval-display">
+                  {settings.timeout === 0 ? 'Infinite' : `${settings.timeout} seconds`}
+                </span>
+              </label>
+              <div className="input-group">
+                <input
+                  type="number"
+                  id="timeout"
+                  min="0"
+                  step="1"
+                  value={settings.timeout}
+                  onChange={(e) => handleTimeoutChange(e.target.value)}
+                />
+                <span className="unit">seconds</span>
+              </div>
+              <small className="default-value">Default: {DEFAULT_SETTINGS.timeout} seconds</small>
+              <p className="setting-help">
+                Set to 0 for infinite time. Otherwise, the answer is automatically marked as incorrect after the timeout.
+              </p>
+            </div>
+          </div>
+
+          <div className="settings-tip">
+            <strong>💡 Tip:</strong> Timeouts help practice quick recall, but Box 1 (new cards) always has infinite time to ensure proper learning.
           </div>
 
           <h3>Audio Detection</h3>

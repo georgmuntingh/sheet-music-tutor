@@ -711,6 +711,7 @@ function App() {
             detectedNote={detectedNote}
             detectedChord={detectedChord}
             isPaused={isPaused}
+            timeout={settings.timeout}
           />
         )}
       </main>
