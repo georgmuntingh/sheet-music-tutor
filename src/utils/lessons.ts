@@ -1,5 +1,12 @@
 import { Lesson, Note, Chord, MathProblem } from '../types';
 import { getFrequency } from './noteUtils';
+import {
+  generateWholeHourProblems,
+  generateHalfPastProblems,
+  generateQuarterPastProblems,
+  generateQuarterToProblems,
+  generateFiveMinuteProblems,
+} from './clockUtils';
 
 // Helper function to generate natural notes for a specific octave range
 const generateNotesForOctave = (octave: number): Note[] => {
@@ -520,6 +527,78 @@ const mathLesson18: Lesson = {
   mathProblems: generateMathProblems('division', [1, 12], [1, 12], 20),
 };
 
+// Clock Lesson 1: Whole Hours
+const clockLesson1: Lesson = {
+  id: 'clock-lesson-1-whole-hours',
+  name: 'C1: Whole Hours',
+  description: 'Learn to read whole hours on an analog clock (1:00, 2:00, etc.)',
+  mode: 'clock',
+  clockProblems: generateWholeHourProblems('no'),
+};
+
+// Clock Lesson 2: Half Past
+const clockLesson2: Lesson = {
+  id: 'clock-lesson-2-half-past',
+  name: 'C2: Half Past',
+  description: 'Learn to read half past times on an analog clock (:30)',
+  mode: 'clock',
+  clockProblems: generateHalfPastProblems('no'),
+};
+
+// Clock Lesson 3: Quarter Past
+const clockLesson3: Lesson = {
+  id: 'clock-lesson-3-quarter-past',
+  name: 'C3: Quarter Past',
+  description: 'Learn to read quarter past times on an analog clock (:15)',
+  mode: 'clock',
+  clockProblems: generateQuarterPastProblems('no'),
+};
+
+// Clock Lesson 4: Quarter To
+const clockLesson4: Lesson = {
+  id: 'clock-lesson-4-quarter-to',
+  name: 'C4: Quarter To',
+  description: 'Learn to read quarter to times on an analog clock (:45)',
+  mode: 'clock',
+  clockProblems: generateQuarterToProblems('no'),
+};
+
+// Clock Lesson 5: Five Minutes Past/To
+const clockLesson5: Lesson = {
+  id: 'clock-lesson-5-five-minutes',
+  name: 'C5: Five Minutes Past/To',
+  description: 'Learn to read times at 5 minutes past and 5 minutes to the hour (:05, :55)',
+  mode: 'clock',
+  clockProblems: generateFiveMinuteProblems([5, 55], 'no'),
+};
+
+// Clock Lesson 6: Ten Minutes Past/To
+const clockLesson6: Lesson = {
+  id: 'clock-lesson-6-ten-minutes',
+  name: 'C6: Ten Minutes Past/To',
+  description: 'Learn to read times at 10 minutes past and 10 minutes to the hour (:10, :50)',
+  mode: 'clock',
+  clockProblems: generateFiveMinuteProblems([10, 50], 'no'),
+};
+
+// Clock Lesson 7: Twenty Minutes Past/To Half
+const clockLesson7: Lesson = {
+  id: 'clock-lesson-7-twenty-minutes',
+  name: 'C7: Twenty Minutes Past/Forty Past',
+  description: 'Learn to read times at 20 and 40 minutes past the hour (:20, :40)',
+  mode: 'clock',
+  clockProblems: generateFiveMinuteProblems([20, 40], 'no'),
+};
+
+// Clock Lesson 8: Twenty-Five/Thirty-Five Minutes
+const clockLesson8: Lesson = {
+  id: 'clock-lesson-8-twentyfive-thirtyfive',
+  name: 'C8: Twenty-Five/Thirty-Five Past',
+  description: 'Learn to read times at 25 and 35 minutes past the hour (:25, :35)',
+  mode: 'clock',
+  clockProblems: generateFiveMinuteProblems([25, 35], 'no'),
+};
+
 // All available lessons
 export const LESSONS: Lesson[] = [
   // Music lessons
@@ -557,6 +636,15 @@ export const LESSONS: Lesson[] = [
   mathLesson16,
   mathLesson17,
   mathLesson18,
+  // Clock lessons
+  clockLesson1,
+  clockLesson2,
+  clockLesson3,
+  clockLesson4,
+  clockLesson5,
+  clockLesson6,
+  clockLesson7,
+  clockLesson8,
 ];
 
 // Get a lesson by ID

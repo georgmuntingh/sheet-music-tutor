@@ -1,4 +1,4 @@
-import { FlashCard, LeitnerBox, Note, Chord, MathProblem, RehearsalSettings } from '../types';
+import { FlashCard, LeitnerBox, Note, Chord, MathProblem, ClockProblem, RehearsalSettings } from '../types';
 import { generateNoteSet } from './noteUtils';
 import { loadSettings } from './settingsStorage';
 
@@ -25,9 +25,22 @@ const getIntervalMs = (boxNumber: number, settings?: RehearsalSettings): number 
   }
 };
 
-// Initialize flash cards for specific notes, chords, or math problems
-export const initializeFlashCards = (notes?: Note[], lessonId?: string, chords?: Chord[], mathProblems?: MathProblem[]): FlashCard[] => {
-  if (mathProblems) {
+// Initialize flash cards for specific notes, chords, math problems, or clock problems
+export const initializeFlashCards = (notes?: Note[], lessonId?: string, chords?: Chord[], mathProblems?: MathProblem[], clockProblems?: ClockProblem[]): FlashCard[] => {
+  if (clockProblems) {
+    // Create cards from clock problems
+    return clockProblems.map((clockProblem, index) => ({
+      id: `card-clock-${clockProblem.hour}-${clockProblem.minute}-${index}`,
+      clockProblem,
+      lessonId,
+      boxNumber: -1, // -1 means not yet introduced
+      lastReviewDate: 0,
+      nextReviewDate: 0,
+      reviewCount: 0,
+      correctCount: 0,
+      incorrectCount: 0,
+    }));
+  } else if (mathProblems) {
     // Create cards from math problems
     return mathProblems.map((mathProblem, index) => ({
       id: `card-math-${mathProblem.operation}-${index}`,

@@ -1,0 +1,42 @@
+.clock-display-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.clock-svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.clock-face {
+  fill: white;
+  stroke: #333;
+  stroke-width: 3;
+}
+
+.clock-tick-hour {
+  stroke: #333;
+}
+
+.clock-tick-minute {
+  stroke: #999;
+}
+
+.clock-number {
+  fill: #333;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-weight: bold;
+}
+
+.clock-hand-hour {
+  stroke: #333;
+}
+
+.clock-hand-minute {
+  stroke: #555;
+}
+
+.clock-center {
+  fill: #333;
+}

@@ -19,8 +19,19 @@ export interface MathProblem {
   operation?: string; // e.g., "addition", "subtraction", "multiplication", "division"
 }
 
+// Clock problem representation
+export interface ClockProblem {
+  hour: number; // 0-23 (24-hour format)
+  minute: number; // 0-59
+  displayAnswer: string; // e.g., "klokken er halv tre" (Norwegian text for display)
+  validAnswers: string[]; // All valid text answers including digital formats
+}
+
+// Supported languages for clock mode
+export type ClockLanguage = 'no'; // Norwegian for now, can add more later
+
 // Lesson mode type
-export type LessonMode = 'math' | 'music';
+export type LessonMode = 'math' | 'music' | 'clock';
 
 // Flash card representation
 export interface FlashCard {
@@ -28,6 +39,7 @@ export interface FlashCard {
   note?: Note; // Optional single note
   chord?: Chord; // Optional chord
   mathProblem?: MathProblem; // Optional math problem
+  clockProblem?: ClockProblem; // Optional clock problem
   lessonId?: string; // ID of the lesson this card belongs to
   boxNumber: number; // 0-4 (5 boxes in Leitner system)
   lastReviewDate: number; // timestamp
@@ -48,10 +60,11 @@ export interface Lesson {
   id: string;
   name: string;
   description: string;
-  mode: LessonMode; // 'math' or 'music'
+  mode: LessonMode; // 'math', 'music', or 'clock'
   notes?: Note[]; // Optional notes for single-note lessons
   chords?: Chord[]; // Optional chords for chord lessons
   mathProblems?: MathProblem[]; // Optional math problems for math lessons
+  clockProblems?: ClockProblem[]; // Optional clock problems for clock lessons
 }
 
 // Learning progress state
@@ -85,6 +98,7 @@ export interface AppSettings {
   audioDetection: AudioDetectionSettings;
   timeout: number; // Timeout in seconds (0 = infinite time)
   silentTimeout: boolean; // Hide timer, allow answering after timeout, but require correct answer before timeout for progression
+  clockLanguage: ClockLanguage; // Language for clock mode answers
 }
 
 // User profile representation

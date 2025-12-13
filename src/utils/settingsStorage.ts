@@ -23,6 +23,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   audioDetection: DEFAULT_AUDIO_SETTINGS,
   timeout: 10, // Default timeout: 10 seconds
   silentTimeout: true, // Hide timer by default, allow answering after timeout
+  clockLanguage: 'no', // Default language for clock mode: Norwegian
 };
 
 // Legacy export for backward compatibility
@@ -64,6 +65,7 @@ export const loadSettings = (userId?: string): AppSettings => {
           audioDetection: DEFAULT_AUDIO_SETTINGS,
           timeout: DEFAULT_SETTINGS.timeout,
           silentTimeout: DEFAULT_SETTINGS.silentTimeout,
+          clockLanguage: DEFAULT_SETTINGS.clockLanguage,
         };
       }
 
@@ -73,6 +75,7 @@ export const loadSettings = (userId?: string): AppSettings => {
         audioDetection: parsed.audioDetection || DEFAULT_AUDIO_SETTINGS,
         timeout: parsed.timeout !== undefined ? parsed.timeout : DEFAULT_SETTINGS.timeout,
         silentTimeout: parsed.silentTimeout !== undefined ? parsed.silentTimeout : DEFAULT_SETTINGS.silentTimeout,
+        clockLanguage: parsed.clockLanguage || DEFAULT_SETTINGS.clockLanguage,
       };
     }
   } catch (error) {
