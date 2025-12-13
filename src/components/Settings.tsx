@@ -1,7 +1,12 @@
 import { useState, useEffect } from 'react';
-import { AppSettings, RehearsalSettings } from '../types';
+import { AppSettings, RehearsalSettings, ClockLanguage } from '../types';
 import { loadSettings, saveSettings, resetSettings, DEFAULT_SETTINGS, formatInterval } from '../utils/settingsStorage';
 import './Settings.css';
+
+// Language display names
+const LANGUAGE_NAMES: Record<ClockLanguage, string> = {
+  'no': 'Norwegian (Norsk)',
+};
 
 interface SettingsProps {
   userId?: string;
@@ -58,6 +63,14 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
     setSettings(prev => ({
       ...prev,
       silentTimeout: value,
+    }));
+    setHasChanges(true);
+  };
+
+  const handleLanguageChange = (value: ClockLanguage) => {
+    setSettings(prev => ({
+      ...prev,
+      clockLanguage: value,
     }));
     setHasChanges(true);
   };
@@ -327,6 +340,36 @@ export const Settings: React.FC<SettingsProps> = ({ userId, onClose, onSettingsC
 
           <div className="settings-tip">
             <strong>💡 Tip:</strong> If the app reacts to background noise (talking, other sounds), increase the harmonic ratio threshold. If it's not detecting soft piano notes, decrease it.
+          </div>
+
+          <h3>Clock Mode Language</h3>
+          <p className="settings-description">
+            Choose the language for clock time answers in Clock mode.
+          </p>
+
+          <div className="settings-grid">
+            <div className="setting-item">
+              <label htmlFor="clockLanguage">
+                <strong>Language</strong>
+              </label>
+              <div className="input-group">
+                <select
+                  id="clockLanguage"
+                  value={settings.clockLanguage}
+                  onChange={(e) => handleLanguageChange(e.target.value as ClockLanguage)}
+                  className="language-select"
+                >
+                  {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                    <option key={code} value={code}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <small className="default-value">
+                Default: {LANGUAGE_NAMES[DEFAULT_SETTINGS.clockLanguage]}
+              </small>
+            </div>
           </div>
         </div>
 

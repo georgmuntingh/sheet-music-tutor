@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FlashCard as FlashCardType, Note } from '../types';
 import { MusicNotation } from './MusicNotation';
+import { ClockDisplay } from './ClockDisplay';
 import { areNotesEquivalent } from '../utils/noteUtils';
+import { isValidClockAnswer } from '../utils/clockUtils';
 import './FlashCard.css';
 
 interface FlashCardProps {
@@ -45,10 +47,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
   // Determine card type
   const isMathCard = !!card.mathProblem;
+  const isClockCard = !!card.clockProblem;
   const isChordCard = !!card.chord;
   const expectedNote = card.note ? `${card.note.name}${card.note.octave}` : '';
   const expectedChordName = card.chord ? card.chord.name : '';
   const expectedMathAnswer = card.mathProblem ? card.mathProblem.answer : '';
+  const expectedClockAnswer = card.clockProblem ? card.clockProblem.displayAnswer : '';
+  const validClockAnswers = card.clockProblem ? card.clockProblem.validAnswers : [];
 
   // Helper function to check if detected chord matches expected chord
   // Compares note names only (ignoring octaves) since a chord can be played in any octave
@@ -367,7 +372,10 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
     let isCorrect = false;
 
-    if (isMathCard) {
+    if (isClockCard) {
+      // For clock problems, check against all valid answers
+      isCorrect = isValidClockAnswer(textInput, validClockAnswers);
+    } else if (isMathCard) {
       // For math problems, check if the input matches the expected answer
       isCorrect = textInput.trim() === expectedMathAnswer;
     } else if (isChordCard) {
@@ -417,7 +425,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       </div>
 
       <div className="notation-container">
-        {isMathCard ? (
+        {isClockCard ? (
+          <ClockDisplay
+            hour={card.clockProblem!.hour}
+            minute={card.clockProblem!.minute}
+            size={200}
+          />
+        ) : isMathCard ? (
           <div className="math-problem">
             <div className="math-question">{card.mathProblem?.question}</div>
           </div>
@@ -433,23 +447,23 @@ export const FlashCard: React.FC<FlashCardProps> = ({
       </div>
 
       <div className="card-content">
-        {!isListening && !isMathCard && (
+        {!isListening && !isMathCard && !isClockCard && (
           <div className="instruction">Click "Start Listening" to begin</div>
         )}
 
-        {isListening && isPaused && !isMathCard && (
+        {isListening && isPaused && !isMathCard && !isClockCard && (
           <div className="instruction paused">
             Paused - Click "Continue" to resume
           </div>
         )}
 
-        {isMathCard && !feedback && (
+        {(isMathCard || isClockCard) && !feedback && (
           <div className="instruction listening">
-            Type your answer below...
+            {isClockCard ? 'What time does the clock show? Type your answer below...' : 'Type your answer below...'}
           </div>
         )}
 
-        {isListening && !isPaused && !feedback && !isMathCard && (
+        {isListening && !isPaused && !feedback && !isMathCard && !isClockCard && (
           <div className="instruction listening">
             {isChordCard
               ? 'Play the chord shown above on your piano or type the chord name below...'
@@ -464,7 +478,15 @@ export const FlashCard: React.FC<FlashCardProps> = ({
               type="text"
               value={textInput}
               onChange={(e) => setTextInput(e.target.value)}
-              placeholder={isChordCard ? "e.g., C, D, F#" : "e.g., C4, D#5, Bb3"}
+              placeholder={
+                isClockCard
+                  ? "e.g., 3:15, halv fire, kvart over tre"
+                  : isChordCard
+                  ? "e.g., C, D, F#"
+                  : isMathCard
+                  ? "Type your answer..."
+                  : "e.g., C4, D#5, Bb3"
+              }
               className="note-input"
               disabled={hasAnswered}
             />
@@ -482,7 +504,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
         {feedback === 'incorrect' && (
           <div className="feedback incorrect-feedback">
-            {isChordCard ? (
+            {isClockCard ? (
+              <>
+                ✗ Incorrect. The correct answer is: {expectedClockAnswer}
+                {textInput && <div className="detected">You typed: {textInput}</div>}
+              </>
+            ) : isChordCard ? (
               <>
                 ✗ Incorrect. The correct chord is {expectedChordName} major
                 {detectedChord && (
@@ -491,6 +518,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({
                   </div>
                 )}
                 {textInput && !detectedChord && <div className="detected">You typed: {textInput}</div>}
+              </>
+            ) : isMathCard ? (
+              <>
+                ✗ Incorrect. The correct answer is {expectedMathAnswer}
+                {textInput && <div className="detected">You typed: {textInput}</div>}
               </>
             ) : (
               <>
@@ -533,8 +565,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
       {showNote && (
         <div className="revealed-answer">
-          {isChordCard
+          {isClockCard
+            ? expectedClockAnswer
+            : isChordCard
             ? `${expectedChordName} major (${card.chord!.notes.map(n => `${n.name}${n.octave}`).join(', ')})`
+            : isMathCard
+            ? expectedMathAnswer
             : expectedNote}
         </div>
       )}

@@ -80,7 +80,11 @@ function App() {
 
     let newCards: FlashCardType[];
 
-    if (lesson.mathProblems) {
+    if (lesson.clockProblems) {
+      // Shuffle clock problems before creating flash cards for random injection order
+      const shuffledProblems = shuffleArray(lesson.clockProblems);
+      newCards = initializeFlashCards(undefined, lesson.id, undefined, undefined, shuffledProblems);
+    } else if (lesson.mathProblems) {
       // Shuffle math problems before creating flash cards for random injection order
       const shuffledProblems = shuffleArray(lesson.mathProblems);
       newCards = initializeFlashCards(undefined, lesson.id, undefined, shuffledProblems);
@@ -455,6 +459,12 @@ function App() {
             >
               🎹 Music
             </button>
+            <button
+              onClick={() => setSelectedMode('clock')}
+              className={selectedMode === 'clock' ? 'mode-button active' : 'mode-button'}
+            >
+              🕐 Clock
+            </button>
           </div>
         )}
 
@@ -622,6 +632,29 @@ function App() {
               <>
                 <div className="math-lessons-grid">
                   {LESSONS.filter(lesson => lesson.mode === 'math').map((lesson) => {
+                    const isInjected = injectedLessonIds.includes(lesson.id);
+                    return (
+                      <button
+                        key={lesson.id}
+                        onClick={() => injectLesson(lesson)}
+                        disabled={isInjected}
+                        className={isInjected ? 'lesson-button injected' : 'lesson-button'}
+                      >
+                        <strong>{lesson.name}</strong>
+                        <span className="lesson-description">{lesson.description}</span>
+                        {isInjected && <span className="injected-badge">✓ Injected</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Clock Mode Lessons */}
+            {selectedMode === 'clock' && (
+              <>
+                <div className="clock-lessons-grid">
+                  {LESSONS.filter(lesson => lesson.mode === 'clock').map((lesson) => {
                     const isInjected = injectedLessonIds.includes(lesson.id);
                     return (
                       <button
