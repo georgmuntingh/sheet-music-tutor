@@ -112,6 +112,13 @@ export const getValidAnswers = (hour: number, minute: number, language: ClockLan
     answers.push(`${hour}:${minute}`);
   }
 
+  // For whole hours, accept just the hour number
+  if (minute === 0) {
+    const displayHour = hour % 12 || 12;
+    answers.push(String(hour)); // 24-hour format hour only
+    answers.push(String(displayHour)); // 12-hour format hour only
+  }
+
   // Language-specific phrases
   if (language === 'no') {
     const phrase = getNorwegianTimePhrase(hour, minute);
@@ -137,14 +144,25 @@ export const getValidAnswers = (hour: number, minute: number, language: ClockLan
 };
 
 /**
+ * Normalize a time string by replacing common separators with ":"
+ */
+const normalizeTimeSeparators = (input: string): string => {
+  // Replace "." and " " with ":" for time format normalization
+  return input.replace(/[.\s]/g, ':');
+};
+
+/**
  * Check if a user's answer matches any valid answer (case-insensitive)
+ * Allows ".", " ", and ":" as separators in digital time formats
  */
 export const isValidClockAnswer = (userAnswer: string, validAnswers: string[]): boolean => {
-  const normalizedUserAnswer = userAnswer.trim().toLowerCase();
+  const trimmedAnswer = userAnswer.trim().toLowerCase();
+  const normalizedUserAnswer = normalizeTimeSeparators(trimmedAnswer);
 
   return validAnswers.some((validAnswer) => {
     const normalizedValid = validAnswer.trim().toLowerCase();
-    return normalizedUserAnswer === normalizedValid;
+    // Check both the original input and the normalized version
+    return trimmedAnswer === normalizedValid || normalizedUserAnswer === normalizedValid;
   });
 };
 
