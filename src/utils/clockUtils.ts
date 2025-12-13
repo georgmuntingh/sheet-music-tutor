@@ -154,10 +154,24 @@ const normalizeTimeSeparators = (input: string): string => {
 /**
  * Check if a user's answer matches any valid answer (case-insensitive)
  * Allows ".", " ", and ":" as separators in digital time formats
+ * Also accepts hour-only input for whole hours
  */
-export const isValidClockAnswer = (userAnswer: string, validAnswers: string[]): boolean => {
+export const isValidClockAnswer = (
+  userAnswer: string,
+  validAnswers: string[],
+  hour?: number,
+  minute?: number
+): boolean => {
   const trimmedAnswer = userAnswer.trim().toLowerCase();
   const normalizedUserAnswer = normalizeTimeSeparators(trimmedAnswer);
+
+  // For whole hours, also accept just the hour number (even if not in validAnswers)
+  if (minute === 0 && hour !== undefined) {
+    const displayHour12 = hour % 12 || 12;
+    if (trimmedAnswer === String(hour) || trimmedAnswer === String(displayHour12)) {
+      return true;
+    }
+  }
 
   return validAnswers.some((validAnswer) => {
     const normalizedValid = validAnswer.trim().toLowerCase();

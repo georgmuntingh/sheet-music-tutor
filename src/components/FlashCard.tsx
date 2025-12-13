@@ -374,7 +374,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({
 
     if (isClockCard) {
       // For clock problems, check against all valid answers
-      isCorrect = isValidClockAnswer(textInput, validClockAnswers);
+      isCorrect = isValidClockAnswer(
+        textInput,
+        validClockAnswers,
+        card.clockProblem?.hour,
+        card.clockProblem?.minute
+      );
     } else if (isMathCard) {
       // For math problems, check if the input matches the expected answer
       isCorrect = textInput.trim() === expectedMathAnswer;
